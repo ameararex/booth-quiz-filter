@@ -12,9 +12,9 @@
 
 ## 残作業（現時点の優先順）
 
-- [ ] 12時間の自動更新を有効化。リポジトリ内のscheduler設定はSCHEDULER_ENABLED=false・COLLECTION_MODE=probe。実際のCloudflare側の公開状態/Secretsは未確認。日本時間09:17/21:17に全件収集→成功時だけ公開する設定へ進める。
+- [ ] 6時間の自動更新を有効化。リポジトリ内のscheduler設定はSCHEDULER_ENABLED=false・COLLECTION_MODE=probe。実際のCloudflare側の公開状態/Secretsは未確認。日本時間04:00/10:00/16:00/22:00に全件収集→成功時だけ公開する設定へ進める。
 - [ ] GitHub起動用Fine-grained PAT（対象リポジトリ・Actions権限）とCloudflare schedulerのSecretを設定。既存の共有用D1は再作成不要。CATALOG_SITE_URL・ALLOW_FULL_COLLECTION・ENABLE_CATALOG_DEPLOYのVariablesを確認。PC操作を不要にするため、起動用Workerの公開/Secret登録もActionsにまとめる作業が残る。
-- [ ] Cron→Actions→全件収集→公開の1周期を実測し、失敗通知・トークン期限の管理方法を確定。12時間ちょうどの完了は保証せず、画面の最終更新で確認する。
+- [ ] Cron→Actions→全件収集→公開の1周期を実測し、失敗通知・トークン期限の管理方法を確定。6時間ちょうどの完了は保証せず、画面の最終更新で確認する。
 - [ ] 本番で共有リンクの作成・別ブラウザ取り込み・期限表示を確認（匿名公開APIの自動テスト/ローカル確認と本番実測は別）。D1の行読み書き・CPU・容量も未測定。
 - [ ] iPhone/iPad実機で検索・表示・非表示・共有/JSON移行を確認。
 - [ ] 掲載停止・問い合わせ窓口を確定し、フッターに案内。商品画像の外部表示条件・関連規約の確認も残っている。スクレイピング方針の案内を画像利用全般の許諾と扱わない。
@@ -195,3 +195,10 @@ Windowsでログ保存先が制限される場合、XDG_CONFIG_HOMEを作業デ�
 - ユーザー指定で下中央の通知を薄緑背景（#e4f5e9）・緑の枠・濃緑の文字へ変更。ローカル画面で背景色と表示を確認。
 - C:/Git/que-in/public/apple-touch-icon.png（180×180）をpublic/apple-touch-icon.pngへそのままコピー。index.htmlからfaviconとapple-touch-iconの両方で参照する。コピー元・コピー先のハッシュ一致、distへの同一画像の出力を確認。
 - ビルド成功。本番のデプロイ・収集は未実行。ユーザーはQue-Fil site deployで商品データを保持したまま反映できる。
+
+## 自動更新時刻を6時間ごとへ変更（最新の指定）
+
+- ユーザー決定：日本時間04:00・10:00・16:00・22:00の1日4回。Cloudflare CronはUTCなので0 1,7,13,19 * * *へ変更。各時刻は収集の起動時刻で、配信更新は収集・検証・デプロイ完了後。
+- 重複抑制を直近11時間から5時間へ変更。6時間前の完了ジョブが次回を妨げないこと、5時間未満の起動はスキップすることを通信なしで検証。進行中のジョブがあれば経過時間に関係なくスキップする。
+- SCHEDULER_ENABLED=false・COLLECTION_MODE=probeは維持。起動用Secretと公開手順の準備後に有効化する。今回は自動実行の有効化・本番公開・BOOTHへの収集を行わない。
+- 38テスト・型チェック・ビルド成功。CronのUTC指定を日本時間へ換算し04:00/10:00/16:00/22:00になることを確認。

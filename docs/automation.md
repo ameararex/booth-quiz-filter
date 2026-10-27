@@ -5,11 +5,11 @@ Cloudflare Cron → GitHub workflow_dispatch → 収集・検証 → Workers Sta
 ## ファイルと初期状態
 
 - `wrangler.scheduler.jsonc` / `scheduler/index.ts` は起動専用の別Worker。画面用Workerと分離し、HTTP受付は404。D1やHTML解析は使わない。
-- UTC 00:17 / 12:17（日本時間09:17 / 21:17）に実行する設定。ただし `SCHEDULER_ENABLED=false` で起動は無効。
+- UTC 01:00 / 07:00 / 13:00 / 19:00（日本時間04:00 / 10:00 / 16:00 / 22:00）に実行する設定。ただし `SCHEDULER_ENABLED=false` で起動は無効。
 - `.github/workflows/collect.yml` はworkflow_dispatchのみ。GitHub scheduleには依存しない。標準Ubuntuランナーを使い、公開リポジトリの無料実行を想定する。リポジトリの公開状態は今回変更していない。
 - `COLLECTION_MODE=probe` が初期値。「クイズ」タグの新着順3ページだけを検証し、公開JSONは差し替えない。
-- 実行中・待機中のジョブ、または直近11時間の手動/API起動があればCronからの起動をスキップする。失敗していても連続再試行はしない。Actions側にも同時実行制御を置く。
-- Actionsには100分の上限を設定。フル収集時のキャッシュは6時間で、12時間後に同じデータを使い続けない。Actionsのキャッシュ・成果物アップロードは現時点では使わない。
+- 実行中・待機中のジョブ、または直近5時間の手動/API起動があればCronからの起動をスキップする。失敗していても連続再試行はしない。Actions側にも同時実行制御を置く。
+- Actionsには100分の上限を設定。フル収集時のHTMLキャッシュは最大6時間。各Actionsは新規ランナーで起動し、実行間のHTMLキャッシュの復元はしない。Actionsのキャッシュ・成果物アップロードは現時点では使わない。
 
 ## 有効化する手順
 
@@ -19,7 +19,7 @@ Cloudflare Cron → GitHub workflow_dispatch → 収集・検証 → Workers Sta
 4. 起動用Workerは `npx wrangler deploy --config wrangler.scheduler.jsonc` で別途公開する。SCHEDULER_ENABLEDをtrueにして再デプロイすると定期起動を開始する。COLLECTION_MODEは検証中probeを維持。
 5. 全件テストへ進む段階で、GitHub Repository variable `ALLOW_FULL_COLLECTION=true` を設定し、手動でmode=fullを実行する。この時点では公開しない。
 6. 公開条件・共有用D1の設定等が整った後、GitHub Secretsへ `CLOUDFLARE_API_TOKEN` と `CLOUDFLARE_ACCOUNT_ID` を設定する。APIトークンの対象アカウント・権限を必要範囲に絞る。D1の実DB IDはRepository variable SHARES_DATABASE_IDに設定する。最初のサイト公開はGitHub ActionsのQue-Fil initial deployで実施し、Repository variable `CATALOG_SITE_URL` にそのHTTPS originを設定する。`ENABLE_CATALOG_DEPLOY=true` にするとfull成功時だけ公開する。
-7. 最後に起動用WorkerのCOLLECTION_MODEをfullへ変更して再デプロイする。12時間更新の目標となるが、起動・完了時刻の保証はない。
+7. 最後に起動用WorkerのCOLLECTION_MODEをfullへ変更して再デプロイする。6時間更新の目標となるが、起動・完了時刻の保証はない。
 
 API起動受付と収集・公開の成功は別。起動用WorkerのエラーはCloudflare側、収集・公開の失敗はActions履歴で確認する。GitHubのActions通知設定・Cloudflareのエラー監視は有効化時に確認する。独立した通知先への自動通知・更新遅延の自動警報は未実装。トークン期限切れや権限変更も停止原因になる。
 

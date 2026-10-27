@@ -67,7 +67,7 @@ Actions → **Que-Fil site deploy** → Run workflowでmainを選んで実行す
 
 収集ジョブと同じ同時実行グループを使用し、重複実行を直列化する。実行中の収集はキャンセルしない。コード反映だけでは自動起動しない。これは既存サイトの更新用で、初回公開にはinitial deployを使う。
 
-## 最後に12時間更新
+## 最後に6時間更新
 
 データ取得から検索まで確認できてから、Cloudflare Cron → GitHub workflow_dispatchの起動を有効化する。これは初回テストとは別の最後の作業。[automation.md](automation.md)を参照。
 

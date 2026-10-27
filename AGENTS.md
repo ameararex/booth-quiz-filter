@@ -78,4 +78,4 @@ BOOTHの既存の非表示リストを自動で引き継げるかは未確認。
 - 名称はQue-Fil（キューフィル）。フッターに非公式表示と免責事項・運営方針を掲載する。
 - BOOTH運営から指摘を受けた場合は直ちに閉鎖し、収集と提供を停止する。Cron停止だけでは静的サイトは閉鎖されない点に注意する。
 - 情報の正確性・完全性・最新性は保証せず、価格等の最終確認・購入はBOOTHへ案内する。
-- 12時間更新はCloudflare CronからGitHub workflow_dispatchを起動し、GitHub Actionsで収集・検証・直接デプロイする。収集をWorkers本体で行わない。初期状態は起動無効・3ページ検証のみ。詳細は docs/automation.md。
+- 6時間更新はCloudflare CronからGitHub workflow_dispatchを起動し、GitHub Actionsで収集・検証・直接デプロイする。収集をWorkers本体で行わない。初期状態は起動無効・3ページ検証のみ。詳細は docs/automation.md。
