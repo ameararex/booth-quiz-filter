@@ -60,7 +60,11 @@ test('長い名前400ショップの64KB超のリストも128KB以内なら共�
     const shared = await (await request(`/${id}`)).json() as { list: { shops: unknown[] } };
     assert.deepEqual(shared.list.shops, shops);
     const tooLarge = { version: 1, shops: shops.map((shop) => ({ ...shop, name: 'あ'.repeat(100) })) };
-    assert.equal((await request('', 'POST', tooLarge)).status, 413);
+    const rejected = await request('', 'POST', tooLarge);
+    assert.equal(rejected.status, 413);
+    const error = await rejected.json() as { error: string };
+    assert.match(error.error, /容量.*JSON/);
+    assert.doesNotMatch(error.error, /128KB/);
   } finally { db.close(); }
 });
 

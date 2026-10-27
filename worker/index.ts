@@ -20,7 +20,7 @@ app.use('/api/*', async (c, next) => {
   if (c.req.method === 'POST' && c.req.header('Origin') !== new URL(c.req.url).origin) return c.json({ error: '同じサイトから操作してください。' }, 403);
   await next();
 });
-app.use('/api/*', bodyLimit({ maxSize: SHARE_MAX_BYTES, onError: (c) => c.json({ error: '共有リストは128KB以下にしてください。' }, 413) }));
+app.use('/api/*', bodyLimit({ maxSize: SHARE_MAX_BYTES, onError: (c) => c.json({ error: '共有リストの容量が大きすぎます。JSONファイルを書き出して共有してください。' }, 413) }));
 
 app.post('/api/shares', async (c) => {
   if (!c.req.header('Content-Type')?.startsWith('application/json')) return c.json({ error: 'JSON形式で送信してください。' }, 415);
@@ -30,7 +30,7 @@ app.post('/api/shares', async (c) => {
     if (!isRecord(input) || input.version !== 1 || !Array.isArray(input.shops) || input.shops.length < 1 || input.shops.length > 5000) throw new Error();
     const list = parseList(JSON.stringify({ version: 1, items: [], shops: input.shops }));
     payload = JSON.stringify(list);
-    if (new TextEncoder().encode(payload).byteLength > SHARE_MAX_BYTES) return c.json({ error: '共有リストが128KBを超えています。JSONファイルを使ってください。' }, 413);
+    if (new TextEncoder().encode(payload).byteLength > SHARE_MAX_BYTES) return c.json({ error: '共有リストの容量が大きすぎます。JSONファイルを書き出して共有してください。' }, 413);
   } catch { return c.json({ error: 'ショップリストの形式が正しくありません。' }, 400); }
   const now = Math.floor(Date.now() / 1000);
   const day = new Date(now * 1000).toISOString().slice(0, 10);

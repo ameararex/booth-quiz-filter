@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'probe: クイズタグ新着順3ページ / full: 同じ検索条件の全ページ'
+        description: 'probe: クイズ検索新着順3ページ / full: 同じ検索条件の全ページ'
         type: choice
         options: [probe, full]
         default: probe

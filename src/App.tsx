@@ -14,6 +14,7 @@ import { sortProducts } from './lib/presentation.ts';
 import type { SortOrder } from './lib/presentation.ts';
 
 const PAGE_SIZE = 60;
+const BOOTH_SEARCH_URL = 'https://booth.pm/ja/search/' + encodeURIComponent('クイズ') + '?sort=new';
 
 function download(text: string, filename: string) {
   const url = URL.createObjectURL(new Blob([text], { type: 'application/json;charset=utf-8' }));
@@ -60,7 +61,7 @@ export function App() {
   const [importBusy, setImportBusy] = useState(false);
   const [importMode, setImportMode] = useState<ImportMode>('merge');
   const [replaceConfirmed, setReplaceConfirmed] = useState(false);
-  const searchRef = useRef<HTMLInputElement>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
   const settingsHeadingRef = useRef<HTMLHeadingElement>(null);
   const importSequence = useRef(0);
   const previewHeadingRef = useRef<HTMLHeadingElement>(null);
@@ -126,7 +127,6 @@ export function App() {
   // 保存は即時に行い、消えるアニメーションの間だけ対象ショップの商品を残す。
   const available = scopedProducts.filter((product) => !hiddenShops.has(product.shopId) || product.shopId === pendingHide);
   const results = available.filter((product) => matchesSearch(product.name, product.shopName, query));
-  const activeSnapshot = catalog?.sorts?.new;
   const pages = Math.max(1, Math.ceil(results.length / PAGE_SIZE));
   const currentPage = Math.min(page, pages);
   const visible = results.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
@@ -142,7 +142,7 @@ export function App() {
     if (hidden.update({ ...hidden.list, shops: [...hidden.list.shops, entry] })) {
       setNotice('');
       setToast({ id: Date.now(), message: `「${entry.name}」を非表示にしました` });
-      searchRef.current?.focus({ preventScroll: true });
+      resultsRef.current?.focus({ preventScroll: true });
     } else { scrollAfterHide.current = null; setPendingHide(null); }
   }
 
@@ -210,18 +210,17 @@ export function App() {
 
         {view === 'catalog' ? <>
           <h2 className="sr-only">商品を探す</h2>
-          <form className="search-panel" role="search" onSubmit={(event) => { event.preventDefault(); setPage(1); }}><div className="search-label-row"><div className="search-label-group"><label htmlFor="search">商品名・ショップ名</label><span className="search-scope">（「タグ：クイズ」の商品が検索できます）</span></div><span className="last-updated">最終更新：{catalog?.fetchedAt ? <time dateTime={catalog.fetchedAt}>{new Date(catalog.fetchedAt).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })} JST</time> : catalog?.mode === 'sample' ? '未取得（サンプル）' : error ? '取得できません' : '読み込み中'}</span></div><div className="search-line"><input ref={searchRef} id="search" type="search" placeholder="検索する言葉を入力" value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} /><button type="submit" className="solid">検索</button></div><p className="search-help">スペース区切りでAND検索。全角・半角、英字の大小を区別しません。</p></form>
+          <form className="search-panel" role="search" onSubmit={(event) => { event.preventDefault(); setPage(1); }}><div className="search-label-row"><div className="search-label-group"><label htmlFor="search">商品名・ショップ名</label></div><span className="last-updated">最終更新：{catalog?.fetchedAt ? <time dateTime={catalog.fetchedAt}>{new Date(catalog.fetchedAt).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })} JST</time> : catalog?.mode === 'sample' ? '未取得（サンプル）' : error ? '取得できません' : '読み込み中'}</span></div><div className="search-line"><input id="search" type="search" placeholder="検索する言葉を入力" value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} /><button type="submit" className="solid">検索</button></div></form>
           {!catalog && !error && <div className="empty panel" role="status">商品データを読み込んでいます…</div>}
           {error && <div className="empty panel" role="alert"><h3>商品データを読み込めませんでした</h3><p>{error}</p><button onClick={() => setReload((value) => value + 1)}>もう一度読み込む</button></div>}
           {catalog && <>
             <div className="toolbar"><p className="result-summary" role="status"><strong>{results.length}</strong>件<span className="hidden-summary">非表示 {scopedProducts.length - available.length}件</span></p><div className="display-controls"><select aria-label="並び順" value={catalog.mode === 'sample' || catalog.sorts ? sortOrder : 'source'} onChange={(event) => { setSortOrder(event.target.value as SortOrder); setPage(1); }}>{catalog.mode === 'sample' || catalog.sorts ? Object.entries(SORT_OPTIONS).map(([key, label]) => <option key={key} value={key} disabled={key === 'wish_lists' ? !catalog.products.some((product) => product.likes != null) : key.startsWith('price_') ? !catalog.products.some((product) => product.priceYen != null) : false}>{label}{catalog.mode === 'sample' ? '（仮）' : ''}</option>) : <option value="source">{catalog.orderLabel}</option>}</select><ViewToggle value={display} onChange={setDisplay} /></div></div>
-            {activeSnapshot && <p className="order-note">{activeSnapshot.hasMore ? `BOOTHで取得した${activeSnapshot.label}の先頭${activeSnapshot.ids.length}件が対象です。検索はこの範囲内のみです。続きの商品は未取得です。` : `${activeSnapshot.label}で最後のページまで取得した${activeSnapshot.ids.length}件が対象です。取得中の変更は反映が前後する場合があります。`} <a href={activeSnapshot.url} target="_blank" rel="noopener noreferrer">BOOTHで確認 ↗</a></p>}
             {sortOrder !== 'new' && sortOrder !== 'source' && <p className="sort-help">価格は表示の最低額で比較します。同じ価格・スキ数の商品は新着順、不明な値は末尾に表示します。</p>}
-            {results.length === 0 ? <div className="empty panel"><h3>表示できる商品がありません</h3><p>検索語を変えるか、非表示の設定を確認してください。</p><div className="actions"><button onClick={() => { setQuery(''); setPage(1); }}>検索を解除</button><button onClick={() => setView('settings')}>非表示を確認</button></div></div> : <div className={`products ${display === 'list' ? 'list' : ''}`}>{visible.map((product) => <ProductCard key={product.id} product={product} mode={catalog.mode} hiding={pendingHide === product.shopId} disabled={hidden.blocked || Boolean(pendingHide)} onHide={() => hide(product)} />)}</div>}
+            {results.length === 0 ? <div className="empty panel"><h3>表示できる商品がありません</h3><p>検索語を変えるか、非表示の設定を確認してください。</p><div className="actions"><button onClick={() => { setQuery(''); setPage(1); }}>検索を解除</button><button onClick={() => setView('settings')}>非表示を確認</button></div></div> : <div ref={resultsRef} tabIndex={-1} role="region" aria-label="商品一覧" className={`products ${display === 'list' ? 'list' : ''}`}>{visible.map((product) => <ProductCard key={product.id} product={product} mode={catalog.mode} hiding={pendingHide === product.shopId} disabled={hidden.blocked || Boolean(pendingHide)} onHide={() => hide(product)} />)}</div>}
             {pages > 1 && <nav className="pagination" aria-label="商品一覧のページ"><button disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)}>前へ</button><span>{currentPage} / {pages}</span><button disabled={currentPage >= pages} onClick={() => setPage(currentPage + 1)}>次へ</button></nav>}
           </>}
         </> : <>
-          <div className="section-heading"><h2 ref={settingsHeadingRef} tabIndex={-1}>非表示の管理</h2></div>
+          <div className="settings-content"><div className="section-heading"><h2 ref={settingsHeadingRef} tabIndex={-1}>非表示の管理</h2></div>
           <div className="device-note panel"><h3>このブラウザだけの設定です</h3><p>BOOTH公式の非表示リストとは別です。端末・ブラウザ間では自動同期されず、ブラウザのデータ消去などで失われることがあります。</p><p>PC・iPhone・iPad間の移行には、共有URLまたはJSONファイルが使えます。バックアップとして保管する場合は、JSONファイルを書き出してください。</p></div>
           <RemovedEntries title="非表示のショップ" entries={hidden.list.shops} disabled={hidden.blocked} onRestore={restore} />
           <section className="panel transfer-panel" aria-label="移行・共有">
@@ -244,12 +243,12 @@ export function App() {
               {importMode === 'replace' && <label className="replace-confirm"><input type="checkbox" checked={replaceConfirmed} onChange={(event) => setReplaceConfirmed(event.target.checked)} />現在のリストからショップ{removedShops}件が外れることを確認しました</label>}
               <div className="actions"><button className="primary" disabled={hidden.blocked || (importMode === 'replace' && !replaceConfirmed)} onClick={applyImport}>この内容で取り込む</button><button onClick={() => setIncoming(null)}>キャンセル</button></div>
             </div>}
-          </section>
+          </section></div>
         </>}
       </main>
     <footer className="shell footer"><strong>Que-Fil（キューフィル）</strong><p>BOOTH・ピクシブ株式会社の公式サービスではありません。</p>
       <details className="disclaimer"><summary>掲載情報・運営方針・免責事項</summary>
-        {catalog && <><p>取得元：{catalog.sourceUrl ? <a href={catalog.sourceUrl} target="_blank" rel="noopener noreferrer">BOOTH公開ページ</a> : '架空のサンプルデータ'}</p><p>{catalog.coverage}</p></>}
+        <p>BOOTHで<a href={BOOTH_SEARCH_URL} target="_blank" rel="noopener noreferrer">「クイズ」と検索できる商品</a>を掲載しています。</p>
         <p>本サービスは、<a href="https://booth.pm/guidelines" target="_blank" rel="noopener noreferrer">BOOTHのガイドライン</a>に従って運営する方針です。BOOTH運営から本サービスに関する指摘を受けた場合は、直ちにサービスを閉鎖し、情報の収集・提供を停止します。</p>
         <p>掲載情報は取得時点のもので、最新の情報ではない場合があります。正確性・完全性・最新性を保証するものではありません。価格、販売状況、商品内容などの最終確認と購入は、BOOTHの商品ページで行ってください。</p>
         <p>商品画像・商品名などの権利は、それぞれの権利者に帰属します。非表示設定は利用者個人の好みを整理するためのもので、商品やショップの品質を評価・断定するものではありません。</p>

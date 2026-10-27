@@ -1,10 +1,10 @@
 import { readFile } from 'node:fs/promises';
 import { parseCatalog } from '../src/lib/catalog.ts';
-import { TAG_URL } from './booth-parser.mjs';
+import { SEARCH_URL } from './booth-parser.mjs';
 const manifest = JSON.parse(await readFile('public/data/manifest.json', 'utf8'));
 if (!/^\/data\/catalog\.[a-zA-Z0-9._-]+\.json$/.test(manifest.catalog)) throw new Error('Invalid catalog path');
 const text = await readFile(`public${manifest.catalog}`, 'utf8');
 if (Buffer.byteLength(text) > 20 * 1024 * 1024) throw new Error('配信容量を超えています。');
 const catalog = parseCatalog(JSON.parse(text));
-if (catalog.mode !== 'live' || catalog.sourceUrl !== TAG_URL || !catalog.sorts?.new || catalog.sorts.new.hasMore) throw new Error('クイズタグ新着順の最終ページまで取得できていません。');
+if (catalog.mode !== 'live' || catalog.sourceUrl !== SEARCH_URL || !catalog.sorts?.new || catalog.sorts.new.hasMore) throw new Error('クイズ検索新着順の最終ページまで取得できていません。');
 console.log(`公開前検証: ${catalog.products.length}商品`);

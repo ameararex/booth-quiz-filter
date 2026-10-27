@@ -1,2 +1,2 @@
-import { collectTaggedCatalog } from './collect-tagged-booth.mjs';
-await collectTaggedCatalog();
+import { collectSearchCatalog } from './collect-search-booth.mjs';
+await collectSearchCatalog();

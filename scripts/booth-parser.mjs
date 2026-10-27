@@ -1,7 +1,7 @@
 import { load } from 'cheerio';
 
 export const CATEGORY_URL = 'https://booth.pm/ja/browse/' + encodeURIComponent('クイズ');
-export const TAG_URL = 'https://booth.pm/ja/items?tags%5B%5D=' + encodeURIComponent('クイズ') + '&sort=new';
+export const SEARCH_URL = 'https://booth.pm/ja/search/' + encodeURIComponent('クイズ') + '?sort=new';
 export const SORTS = {
   popularity: '人気順', new: '新着順', wish_lists: 'スキ順',
   price_desc: '価格が高い順', price_asc: '価格が低い順',

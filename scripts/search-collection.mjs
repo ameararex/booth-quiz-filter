@@ -1,4 +1,4 @@
-import { TAG_URL, parseBoothPage } from './booth-parser.mjs';
+import { SEARCH_URL, parseBoothPage } from './booth-parser.mjs';
 
 export function parseLikes(value, ids) {
   if (!value || typeof value.wishlists_counts !== 'object' || value.wishlists_counts === null || Array.isArray(value.wishlists_counts)) throw new Error('スキ数の応答形式が不正です。');
@@ -9,10 +9,10 @@ export function parseLikes(value, ids) {
   }));
 }
 
-export async function collectTaggedProducts({ readPage, readLikes, pageLimit = Infinity, onPage = async () => {} }) {
+export async function collectSearchProducts({ readPage, readLikes, pageLimit = Infinity, onPage = async () => {} }) {
   const products = new Map();
   const signatures = new Set();
-  let url = new URL(TAG_URL);
+  let url = new URL(SEARCH_URL);
   for (let page = 1; ; page++) {
     const cache = await readPage(url.href, page);
     const parsed = parseBoothPage(cache.html, url.href);
@@ -23,11 +23,11 @@ export async function collectTaggedProducts({ readPage, readLikes, pageLimit = I
     const likes = ids.length ? parseLikes(await readLikes(ids), ids) : new Map();
     for (const product of parsed.products) if (!products.has(product.id)) products.set(product.id, { ...product, likes: likes.get(product.id) ?? null });
     if (Buffer.byteLength(JSON.stringify([...products.values()])) > 19 * 1024 * 1024) throw new Error('商品JSONが配信容量予算に達したため停止します。');
-    const snapshot = { label: '新着順', url: TAG_URL, fetchedAt: cache.fetchedAt, pageCount: page, hasMore: parsed.hasMore, categoryTotal: parsed.categoryTotal, ids: [...products.keys()] };
+    const snapshot = { label: '新着順', url: SEARCH_URL, fetchedAt: cache.fetchedAt, pageCount: page, hasMore: parsed.hasMore, categoryTotal: parsed.categoryTotal, ids: [...products.keys()] };
     await onPage(snapshot);
     if (!parsed.hasMore || page >= pageLimit) return { products: [...products.values()], snapshot };
     const next = new URL(parsed.nextUrl);
-    if (next.searchParams.getAll('tags[]').length !== 1 || next.searchParams.get('tags[]') !== 'クイズ' || next.searchParams.get('sort') !== 'new' || Number(next.searchParams.get('page')) !== page + 1 || [...next.searchParams.keys()].some((key) => !['tags[]', 'sort', 'page'].includes(key))) throw new Error('タグ・新着順・ページ番号が変わったため停止します。');
+    if (next.searchParams.getAll('sort').length !== 1 || next.searchParams.get('sort') !== 'new' || next.searchParams.getAll('page').length !== 1 || Number(next.searchParams.get('page')) !== page + 1 || [...next.searchParams.keys()].some((key) => !['sort', 'page'].includes(key))) throw new Error('検索条件・新着順・ページ番号が変わったため停止します。');
     url = next;
   }
 }

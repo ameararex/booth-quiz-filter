@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /api/
+
+Sitemap: https://que-fil.ameararex.com/sitemap.xml

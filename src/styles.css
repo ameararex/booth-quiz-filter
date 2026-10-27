@@ -28,7 +28,6 @@ form label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6
 .search-label-row { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 2px 12px; margin-bottom: 6px; }
 .search-label-row label { margin-bottom: 0; }
 .search-label-group { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; min-width: 0; }
-.search-scope { font-size: 11px; font-weight: 400; color: #526475; }
 .last-updated { margin-left: auto; font-size: 11px; color: #526475; }
 input[type="search"] { min-width: 0; flex: 1; border: 1px solid #99b8d8; border-radius: 3px; padding: 10px 12px; font-size: 16px; background: #fff; }
 .solid { background: #0874d1; color: white; border-color: #0874d1; padding: 8px 26px; }
@@ -38,7 +37,6 @@ input[type="search"] { min-width: 0; flex: 1; border: 1px solid #99b8d8; border-
 #hidden-summary { color: #777; margin-left: 21px; }
 .display-controls { display: flex; gap: 16px; align-items: center; color: #52708b; }
 .display-controls select { font: inherit; font-size: 13px; color: #254e75; border: 1px solid #c5d7eb; border-radius: 3px; background: #fff; min-height: 44px; padding: 7px 9px; }
-.order-note { font-size: 11px; color: #536d85; margin: -12px 0 20px; }
 .view-buttons { display: flex; }
 .view-buttons button { min-height: 44px; min-width: 44px; display: grid; place-items: center; border-radius: 0; padding: 9px; }
 .view-buttons svg { width: 20px; height: 20px; }
@@ -111,8 +109,7 @@ dialog li button { flex-shrink: 0; }
 .warning, .error-text { color: #a14026; }
 .announcement { color: #245788; font-size: 12px; margin-bottom: 14px; }
 .announcement:empty { display: none; }
-.search-help { margin-top: 7px; font-size: 11px; color: #536d85; }
-.hidden-summary { color: #61758a; margin-left: 18px; font-size: 12px; }
+.hidden-summary { color: #61758a; margin-left: 16px; font-size: 12px; white-space: nowrap; }
 .no-image { font-size: 11px; color: #61758a; }
 .thumbnail { text-decoration: none; color: inherit; }
 .item-title h3 a { color: inherit; text-decoration: none; }
@@ -196,4 +193,11 @@ input[type="radio"], input[type="checkbox"] { accent-color: #0874d1; min-width: 
   .header-inner { position: relative; display: block; padding-top: 10px; padding-bottom: 12px; }
   .header-inner nav { position: absolute; top: 12px; right: 0; }
   .site-subtitle { line-height: 1.8; }
+}
+
+.settings-content { max-width: 800px; margin-inline: auto; }
+.result-summary { min-width: 0; }
+@media (max-width: 600px) {
+  .result-summary { flex-shrink: 0; }
+  .hidden-summary { display: block; margin-left: 0; font-size: 11px; }
 }

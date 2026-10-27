@@ -1,2 +1,2 @@
-import { collectTaggedCatalog } from './collect-tagged-booth.mjs';
-await collectTaggedCatalog({ pageLimit: 3, publish: false });
+import { collectSearchCatalog } from './collect-search-booth.mjs';
+await collectSearchCatalog({ pageLimit: 3, publish: false });
