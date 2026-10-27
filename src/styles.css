@@ -162,6 +162,7 @@ input[type="radio"], input[type="checkbox"] { accent-color: #0874d1; min-width: 
 .empty { text-align: center; padding: 40px 18px; }
 .empty .actions { justify-content: center; }
 .pagination { display: flex; justify-content: center; align-items: center; gap: 18px; margin-top: 24px; }
+.pagination-top { margin: 0 0 22px; }
 .footer { margin-top: 28px; }
 .footer p { margin-top: 6px; }
 .disclaimer { margin-top: 12px; color: #526475; font-size: 12px; line-height: 1.9; }
