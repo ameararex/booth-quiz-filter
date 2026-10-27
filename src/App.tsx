@@ -62,10 +62,19 @@ export function App() {
   const [importMode, setImportMode] = useState<ImportMode>('merge');
   const [replaceConfirmed, setReplaceConfirmed] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
+  const resultsStartRef = useRef<HTMLDivElement>(null);
+  const scrollAfterPage = useRef(false);
   const settingsHeadingRef = useRef<HTMLHeadingElement>(null);
   const importSequence = useRef(0);
   const previewHeadingRef = useRef<HTMLHeadingElement>(null);
   const scrollAfterHide = useRef<{ x: number; y: number } | null>(null);
+
+  useLayoutEffect(() => {
+    if (!scrollAfterPage.current) return;
+    scrollAfterPage.current = false;
+    resultsRef.current?.focus({ preventScroll: true });
+    resultsStartRef.current?.scrollIntoView({ block: 'start', behavior: 'instant' });
+  }, [page]);
 
   useLayoutEffect(() => {
     const position = scrollAfterHide.current;
@@ -133,6 +142,11 @@ export function App() {
   const preview = incoming ? combineLists(hidden.list, incoming, importMode) : null;
   const addedShops = incoming?.shops.filter((entry) => !hiddenShops.has(entry.id)).length ?? 0;
   const removedShops = incoming ? hidden.list.shops.filter((entry) => !incoming.shops.some((candidate) => candidate.id === entry.id)).length : 0;
+
+  function changePage(nextPage: number) {
+    scrollAfterPage.current = true;
+    setPage(nextPage);
+  }
 
   function hide(product: Product) {
     const entry = { id: product.shopId, name: product.shopName };
@@ -214,10 +228,10 @@ export function App() {
           {!catalog && !error && <div className="empty panel" role="status">商品データを読み込んでいます…</div>}
           {error && <div className="empty panel" role="alert"><h3>商品データを読み込めませんでした</h3><p>{error}</p><button onClick={() => setReload((value) => value + 1)}>もう一度読み込む</button></div>}
           {catalog && <>
-            <div className="toolbar"><p className="result-summary" role="status"><strong>{results.length}</strong>件<span className="hidden-summary">非表示 {scopedProducts.length - available.length}件</span></p><div className="display-controls"><select aria-label="並び順" value={catalog.mode === 'sample' || catalog.sorts ? sortOrder : 'source'} onChange={(event) => { setSortOrder(event.target.value as SortOrder); setPage(1); }}>{catalog.mode === 'sample' || catalog.sorts ? Object.entries(SORT_OPTIONS).map(([key, label]) => <option key={key} value={key} disabled={key === 'wish_lists' ? !catalog.products.some((product) => product.likes != null) : key.startsWith('price_') ? !catalog.products.some((product) => product.priceYen != null) : false}>{label}{catalog.mode === 'sample' ? '（仮）' : ''}</option>) : <option value="source">{catalog.orderLabel}</option>}</select><ViewToggle value={display} onChange={setDisplay} /></div></div>
+            <div ref={resultsStartRef} className="toolbar"><p className="result-summary" role="status"><strong>{results.length}</strong>件<span className="hidden-summary">非表示 {scopedProducts.length - available.length}件</span></p><div className="display-controls"><select aria-label="並び順" value={catalog.mode === 'sample' || catalog.sorts ? sortOrder : 'source'} onChange={(event) => { setSortOrder(event.target.value as SortOrder); setPage(1); }}>{catalog.mode === 'sample' || catalog.sorts ? Object.entries(SORT_OPTIONS).map(([key, label]) => <option key={key} value={key} disabled={key === 'wish_lists' ? !catalog.products.some((product) => product.likes != null) : key.startsWith('price_') ? !catalog.products.some((product) => product.priceYen != null) : false}>{label}{catalog.mode === 'sample' ? '（仮）' : ''}</option>) : <option value="source">{catalog.orderLabel}</option>}</select><ViewToggle value={display} onChange={setDisplay} /></div></div>
             {sortOrder !== 'new' && sortOrder !== 'source' && <p className="sort-help">価格は表示の最低額で比較します。同じ価格・スキ数の商品は新着順、不明な値は末尾に表示します。</p>}
             {results.length === 0 ? <div className="empty panel"><h3>表示できる商品がありません</h3><p>検索語を変えるか、非表示の設定を確認してください。</p><div className="actions"><button onClick={() => { setQuery(''); setPage(1); }}>検索を解除</button><button onClick={() => setView('settings')}>非表示を確認</button></div></div> : <div ref={resultsRef} tabIndex={-1} role="region" aria-label="商品一覧" className={`products ${display === 'list' ? 'list' : ''}`}>{visible.map((product) => <ProductCard key={product.id} product={product} mode={catalog.mode} hiding={pendingHide === product.shopId} disabled={hidden.blocked || Boolean(pendingHide)} onHide={() => hide(product)} />)}</div>}
-            {pages > 1 && <nav className="pagination" aria-label="商品一覧のページ"><button disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)}>前へ</button><span>{currentPage} / {pages}</span><button disabled={currentPage >= pages} onClick={() => setPage(currentPage + 1)}>次へ</button></nav>}
+            {pages > 1 && <nav className="pagination" aria-label="商品一覧のページ"><button disabled={currentPage <= 1} onClick={() => changePage(currentPage - 1)}>前へ</button><span>{currentPage} / {pages}</span><button disabled={currentPage >= pages} onClick={() => changePage(currentPage + 1)}>次へ</button></nav>}
           </>}
         </> : <>
           <div className="settings-content"><div className="section-heading"><h2 ref={settingsHeadingRef} tabIndex={-1}>非表示の管理</h2></div>

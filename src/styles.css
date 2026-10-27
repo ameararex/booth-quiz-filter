@@ -34,6 +34,7 @@ input[type="search"] { min-width: 0; flex: 1; border: 1px solid #99b8d8; border-
 .solid:hover:not(:disabled) { background: #0059a5; color: #fff; }
 .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; border-bottom: 1px solid #ccc; margin: 27px 0 22px; padding-bottom: 12px; font-size: 12px; }
 .toolbar strong { font-size: 20px; margin-right: 5px; }
+.toolbar { scroll-margin-top: 16px; }
 #hidden-summary { color: #777; margin-left: 21px; }
 .display-controls { display: flex; gap: 16px; align-items: center; color: #52708b; }
 .display-controls select { font: inherit; font-size: 13px; color: #254e75; border: 1px solid #c5d7eb; border-radius: 3px; background: #fff; min-height: 44px; padding: 7px 9px; }
