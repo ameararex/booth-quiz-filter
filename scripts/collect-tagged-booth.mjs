@@ -26,7 +26,7 @@ export async function collectTaggedCatalog({ pageLimit = Infinity, publish = tru
     }
     async function request(task) {
       budget();
-      if (requests) await delay(10000);
+      if (requests) await delay(5000);
       budget(); requests++;
       return task();
     }
