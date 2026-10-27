@@ -5,7 +5,7 @@ import { isRecord, parseList } from '../src/lib/filters.ts';
 
 const SHARE_TTL_SECONDS = 7 * 86400;
 const SHARE_MAX_BYTES = 64_000;
-const SHARE_DAILY_LIMIT = 100;
+const SHARE_DAILY_LIMIT = 500;
 type Bindings = { SHARES_DB: D1Database };
 type ShareRow = { payload: string; expires_at: number };
 const idPattern = /^[a-zA-Z0-9_-]{24}$/;

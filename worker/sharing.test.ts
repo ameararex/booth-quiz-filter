@@ -47,14 +47,14 @@ test('200ショップの共有・7日期限を検証し、管理用トークン�
   } finally { db.close(); }
 });
 
-test('失効したリンクは削除前でも取得不可。日次100件と容量制限を検証する', async () => {
+test('失効したリンクは削除前でも取得不可。日次500件と容量制限を検証する', async () => {
   const { db, request } = setup();
   try {
     const body = { version: 1, shops: [{ id: 'sample', name: '店舗' }] };
     const owner = await (await request('', 'POST', body)).json() as { id: string };
     db.prepare('UPDATE shares SET expires_at = 0').run();
     assert.equal((await request(`/${owner.id}`)).status, 404);
-    db.prepare('UPDATE share_limits SET created_count = 99').run();
+    db.prepare('UPDATE share_limits SET created_count = 499').run();
     assert.equal((await request('', 'POST', body)).status, 201);
     assert.equal((await request('', 'POST', body)).status, 429);
     assert.equal((await request('', 'POST', { version: 1, shops: [], padding: 'x'.repeat(64000) })).status, 413);
