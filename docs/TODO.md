@@ -111,3 +111,12 @@ Windowsでログ保存先が制限される場合、XDG_CONFIG_HOMEを作業デ�
 - 人気順は先頭・ページ送りともsortパラメータを付けないよう修正。並び順メタデータの検証もデフォルト人気順を許容し、既存の明示形式も互換維持。
 - 想定外の転送には自動追従せず、HTTPステータスと転送先origin/pathを案内する。転送先のクエリはログへ出さない。
 - 31テスト・型チェック・ビルド成功。GitHub側の実行は新しいコミットを使って検証する必要がある。
+
+## 初回デプロイのCloudflare管理APIエラー
+
+- 実Actionsで人気順3ページ取得、JSON生成、D1マイグレーション、Worker/静的アセットのアップロードまで進行。公開経路の設定前に /workers/workers/booth-quiz-filter が10007で失敗した。
+- Wrangler 4.153.0の実装を調査し、アップロード後のsubdomainDeployが新しいWorker metadata APIを無条件に読むことを確認。アップロード先のWorker Script APIとは異なる。アカウント側との互換性が原因の可能性があり、本番での原因確定は未了。
+- 上記APIへの変更（Wrangler 4.136.1）前の4.136.0に一時固定し、従来のScript subdomain APIを使う構成へ変更。node_modulesを独自改変する方式は採用しない。
+- 固定に伴うMiniflareのundici/sharpは修正版7.30.1/0.35.5へoverridesで固定。npm auditの検出は0件。これらは開発・配信ツールの依存で、ブラウザの検索処理の変更はない。
+- 31テスト・型チェック・ビルド成功。サイト用/起動用Workerのドライランを確認。本番での再デプロイ成功はまだ未確認。GitHubで新しいmainから実行する。
+- 将来Wranglerを更新する際は、この管理APIの互換性を確認し、一時固定とoverridesの必要性を見直す。
