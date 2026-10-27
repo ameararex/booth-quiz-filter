@@ -138,7 +138,7 @@ export function App() {
     setImportMode('merge');
     setReplaceConfirmed(false);
     try {
-      if (file.size > MAX_IMPORT_BYTES) throw new Error('ファイルは2MiB以下にしてください。');
+      if (file.size > MAX_IMPORT_BYTES) throw new Error('ファイルは2MB以下にしてください。');
       const next = parseList(await file.text());
       if (sequence === importSequence.current) setIncoming(next);
     } catch (reason) {
@@ -158,7 +158,7 @@ export function App() {
   return <>
     <a className="skip-link" href="#main">本文へ移動</a>
     <header className="site-header"><div className="shell header-inner">
-      <h1>Que-Fil<span>キューフィル · クイズプレイヤーのためのBOOTH検索サービス</span></h1>
+      <h1><a className="site-title" href="/">Que-Fil</a><span>キューフィル · クイズプレイヤーのためのBOOTH検索サービス</span></h1>
       <nav aria-label="メニュー"><button aria-pressed={view === 'settings'} onClick={() => { setView(view === 'settings' ? 'catalog' : 'settings'); setNotice(''); }}>{view === 'settings' ? '商品一覧に戻る' : <>非表示リスト <span>{hidden.list.shops.length}</span></>}</button></nav>
     </div></header>
     <div className="catalog-notice"><div className="shell">掲載情報は取得時点のものです。価格・販売状況はBOOTHで最終確認してください。</div></div>
@@ -187,10 +187,10 @@ export function App() {
           <div className="section-heading"><h2 ref={settingsHeadingRef} tabIndex={-1}>非表示の管理</h2></div>
           <div className="device-note panel"><h3>このブラウザだけの設定です</h3><p>BOOTH公式の非表示リストとは別です。端末・ブラウザ間では自動同期されず、ブラウザのデータ消去などで失われることがあります。</p><p>PC・iPhone・iPad間の移行には、共有URLまたはJSONファイルが使えます。バックアップとして保管する場合は、JSONファイルを書き出してください。</p></div>
           <RemovedEntries title="非表示のショップ" entries={hidden.list.shops} disabled={hidden.blocked} onRestore={restore} />
-          <SharePanel list={hidden.list} onPreview={previewShare} download={download} />
+          <SharePanel list={hidden.list} onPreview={previewShare} />
           <section className="panel transfer"><h3>バックアップ・端末間の移行</h3><p>非表示にしたショップをファイルに保存して、バックアップや別の端末への移行に使えます。</p>
             <div className="actions"><button className="primary" onClick={() => download(JSON.stringify(hidden.list, null, 2), 'booth-quiz-filter-hidden-v1.json')}>JSONを書き出す</button><label className={`file-button ${hidden.blocked ? 'disabled' : ''}`}>JSONを選んで取り込む<input type="file" accept="application/json,.json" disabled={hidden.blocked} onChange={(event) => { void readImport(event); }} /></label></div>
-            <p className="muted">ファイル容量は2MiBまで。選んだだけでは既存設定を変更しません。</p>
+            <p className="muted">ファイル容量は2MBまで。選んだだけでは既存設定を変更しません。</p>
             {importBusy && <p role="status">ファイルを確認しています…</p>}{importError && <p className="error-text" role="alert">{importError} 既存設定は変更していません。</p>}
             {incoming && preview && <div className="import-preview"><h4 ref={previewHeadingRef} tabIndex={-1}>取り込む内容を確認</h4><p>取り込むショップ：{incoming.shops.length}件</p><fieldset><legend>既存リストの扱い</legend><label><input type="radio" name="import-mode" checked={importMode === 'merge'} onChange={() => { setImportMode('merge'); setReplaceConfirmed(false); }} />追加する（既存設定を残す）</label><label><input type="radio" name="import-mode" checked={importMode === 'replace'} onChange={() => { setImportMode('replace'); setReplaceConfirmed(false); }} />置き換える</label></fieldset>
               {importMode === 'merge' ? <p>新しく追加：ショップ{addedShops}件。登録済みのショップは追加しません。</p> : <p className="error-text">現在のリストから外れるショップ：{removedShops}件。</p>}

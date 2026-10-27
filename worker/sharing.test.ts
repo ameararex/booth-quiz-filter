@@ -28,22 +28,22 @@ function setup() {
   return { db, request };
 }
 
-test('200ショップの共有・7日期限・削除秘密鍵を検証する', async () => {
+test('200ショップの共有・7日期限を検証し、管理用トークンを発行しない', async () => {
   const { db, request } = setup();
   try {
     const before = Date.now();
     const created = await request('', 'POST', { version: 1, shops: Array.from({ length: 200 }, (_, i) => ({ id: `shop-${i}`, name: `ショップ${i}` })) });
     assert.equal(created.status, 201);
-    const owner = await created.json() as { id: string; deleteToken: string; expiresAt: string };
+    const owner = await created.json() as { id: string; expiresAt: string };
     assert.ok(Math.abs(Date.parse(owner.expiresAt) - before - 7 * 86400000) < 5000);
     const result = await request(`/${owner.id}`);
     const shared = await result.json() as { list: { shops: unknown[]; items: unknown[] } };
     assert.equal(shared.list.shops.length, 200);
     assert.deepEqual(shared.list.items, []);
     assert.equal(result.headers.get('cache-control'), 'no-store');
-    assert.equal((await request(`/${owner.id}`, 'DELETE', undefined, 'x'.repeat(43))).status, 403);
-    assert.equal((await request(`/${owner.id}`, 'DELETE', undefined, owner.deleteToken)).status, 200);
-    assert.equal((await request(`/${owner.id}`)).status, 404);
+    assert.equal('deleteToken' in owner, false);
+    assert.equal((await request(`/${owner.id}`, 'DELETE')).status, 404);
+    assert.equal((await request(`/${owner.id}`)).status, 200);
   } finally { db.close(); }
 });
 
@@ -57,7 +57,7 @@ test('失効したリンクは削除前でも取得不可。日次100件と容�
     db.prepare('UPDATE share_limits SET created_count = 99').run();
     assert.equal((await request('', 'POST', body)).status, 201);
     assert.equal((await request('', 'POST', body)).status, 429);
-    assert.equal((await request('', 'POST', { version: 1, shops: [], padding: 'x'.repeat(65536) })).status, 413);
+    assert.equal((await request('', 'POST', { version: 1, shops: [], padding: 'x'.repeat(64000) })).status, 413);
     assert.equal((await request('', 'POST', { version: 99 })).status, 400);
     const crossOrigin = await app.request('https://example.test/api/shares', { method: 'POST', headers: { Origin: 'https://other.test' } }, { SHARES_DB: {} as D1Database });
     assert.equal(crossOrigin.status, 403);

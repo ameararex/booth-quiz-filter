@@ -32,7 +32,7 @@ function entries(value: unknown): HiddenEntry[] {
 
 export function parseList(text: string): HiddenList {
   if (new TextEncoder().encode(text).byteLength > MAX_IMPORT_BYTES) {
-    throw new Error('ファイルは2MiB以下にしてください。件数の固定上限ではなく、読み込み容量の制限です。');
+    throw new Error('ファイルは2MB以下にしてください。件数の固定上限ではなく、読み込み容量の制限です。');
   }
   let value: unknown;
   try { value = JSON.parse(text); } catch { throw new Error('JSONとして読み込めませんでした。'); }

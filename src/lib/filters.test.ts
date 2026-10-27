@@ -33,10 +33,11 @@ test('不正JSON・不明バージョン・不正な型やID・空名を拒否�
   assert.equal(current.items.length, 1);
 });
 
-test('201件以上を取り込めるが2MiB超のファイルを拒否する', () => {
+test('201件以上を取り込めるが実際の容量上限超過は拒否する', () => {
   const items = Array.from({ length: 250 }, (_, index) => ({ id: `item-${index}`, name: `商品${index}` }));
   assert.equal(parseList(JSON.stringify({ version: 1, items, shops: [] })).items.length, 250);
-  assert.throws(() => parseList(' '.repeat(MAX_IMPORT_BYTES + 1)), /2MiB/);
+  assert.deepEqual(parseList(JSON.stringify(emptyList()).padEnd(MAX_IMPORT_BYTES, ' ')), emptyList());
+  assert.throws(() => parseList(' '.repeat(MAX_IMPORT_BYTES + 1)), /2MB/);
 });
 
 test('全角・半角・英字の大小を正規化し、語をまたいでAND検索する', () => {
