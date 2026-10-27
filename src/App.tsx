@@ -5,6 +5,10 @@ import type { Catalog, Product } from './lib/catalog.ts';
 import { combineLists, matchesSearch, MAX_IMPORT_BYTES, parseList } from './lib/filters.ts';
 import type { HiddenEntry, HiddenList, ImportMode } from './lib/filters.ts';
 import { useHiddenList } from './hooks/useHiddenList.ts';
+import { ProductCard } from './components/ProductCard.tsx';
+import { ViewToggle } from './components/ViewToggle.tsx';
+import { sortProducts } from './lib/presentation.ts';
+import type { SortOrder } from './lib/presentation.ts';
 
 const PAGE_SIZE = 12;
 
@@ -40,6 +44,8 @@ export function App() {
   const [reload, setReload] = useState(0);
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
+  const [display, setDisplay] = useState<'grid' | 'list'>('grid');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('new');
   const [notice, setNotice] = useState('');
   const [incoming, setIncoming] = useState<HiddenList | null>(null);
   const [importError, setImportError] = useState('');
@@ -47,6 +53,7 @@ export function App() {
   const [importMode, setImportMode] = useState<ImportMode>('merge');
   const [replaceConfirmed, setReplaceConfirmed] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
+  const settingsHeadingRef = useRef<HTMLHeadingElement>(null);
   const importSequence = useRef(0);
 
   useEffect(() => {
@@ -62,7 +69,7 @@ export function App() {
   const hiddenItems = new Set(hidden.list.items.map((entry) => entry.id));
   const hiddenShops = new Set(hidden.list.shops.map((entry) => entry.id));
   const available = catalog?.products.filter((product) => !hiddenItems.has(product.id) && !hiddenShops.has(product.shopId)) ?? [];
-  const results = available.filter((product) => matchesSearch(product.name, product.shopName, query));
+  const results = sortProducts(available.filter((product) => matchesSearch(product.name, product.shopName, query)), catalog?.mode ?? 'sample', sortOrder);
   const pages = Math.max(1, Math.ceil(results.length / PAGE_SIZE));
   const currentPage = Math.min(page, pages);
   const visible = results.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
@@ -84,6 +91,7 @@ export function App() {
   function restore(id: string, kind: 'items' | 'shops') {
     if (hidden.update({ ...hidden.list, [kind]: hidden.list[kind].filter((entry) => entry.id !== id) })) {
       setNotice('非表示を解除しました。ショップまたは商品が別途非表示の場合は、そちらの解除も必要です。');
+      settingsHeadingRef.current?.focus();
     }
   }
 
@@ -118,24 +126,11 @@ export function App() {
   return <>
     <a className="skip-link" href="#main">本文へ移動</a>
     <header className="site-header"><div className="shell header-inner">
-      <a className="brand" href="/" aria-label="BOOTHクイズ検索 ホーム"><span className="brand-mark" aria-hidden="true">Q</span><span>BOOTHクイズ検索<small>非公式の検索補助サイト・試作版</small></span></a>
-      <span className="prototype-tag">PROTOTYPE</span>
+      <h1>クイズ検索<span>BOOTHの非公式検索補助</span></h1>
+      <nav aria-label="メニュー"><button aria-pressed={view === 'settings'} onClick={() => { setView(view === 'settings' ? 'catalog' : 'settings'); setNotice(''); }}>{view === 'settings' ? '商品一覧に戻る' : <>非表示リスト <span>{hidden.list.items.length + hidden.list.shops.length}</span></>}</button><a className="mock-link" href="/mockups/catalog.html">デザインモック</a></nav>
     </div></header>
-
-    <div className="shell layout">
-      <aside className="sidebar">
-        <p className="eyebrow">自分に合う一冊を</p>
-        <h1>クイズを探す。<br />好みで整える。</h1>
-        <p className="sidebar-copy">気になる商品を探しながら、表示する商品を自分の好みに合わせて整理できます。</p>
-        <nav className="view-nav" aria-label="表示の切り替え">
-          <button aria-pressed={view === 'catalog'} onClick={() => setView('catalog')}>商品を探す<span aria-hidden="true">→</span></button>
-          <button aria-pressed={view === 'settings'} onClick={() => setView('settings')}>非表示の管理<span className="nav-count">{hidden.list.items.length + hidden.list.shops.length}</span></button>
-        </nav>
-        <div className="sidebar-note"><strong>非表示は、あなたの好みです。</strong><p>商品の品質を評価するものではありません。いつでも解除できます。</p></div>
-      </aside>
-
-      <main id="main" tabIndex={-1}>
-        <div className="sample-banner"><span className="badge">サンプル版</span><p>現在は架空の商品で操作を試せます。BOOTHから取得した商品情報ではありません。</p></div>
+    <div className="mock-notice"><div className="shell">{catalog?.mode === 'live' ? '掲載情報は取得時点のものです。価格・販売状況はBOOTHで最終確認してください。' : 'サンプル版：商品・表紙画像はすべて架空です。BOOTHから取得した情報ではありません。'}</div></div>
+      <main className="shell" id="main" tabIndex={-1}>
         <div className={`save-status ${hidden.saved ? '' : 'warning'}`} role="status">{hidden.status}</div>
         {hidden.blocked && <div className="panel recovery" role="alert">
           <h2>保存済み設定を保護しています</h2><p>元のデータを自動で上書きしません。必要なら元データを書き出した後、保存領域を初期化してください。</p>
@@ -145,23 +140,19 @@ export function App() {
         <p className="announcement" role="status">{notice}</p>
 
         {view === 'catalog' ? <>
-          <div className="section-heading"><div><p className="eyebrow">CATALOG</p><h2>商品を探す</h2></div><span className="muted">{catalog?.orderLabel ?? 'サンプルの表示順'}</span></div>
-          <div className="search-panel panel"><label htmlFor="search">商品名・ショップ名で検索</label><div className="search-row"><input ref={searchRef} id="search" type="search" placeholder="例：大会記録、文学、ショップ名" value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} /><button disabled={!query} onClick={() => { setQuery(''); setPage(1); searchRef.current?.focus(); }}>クリア</button></div><p className="muted">スペースで区切ると、すべての語を含む商品を表示します。全角・半角、英字の大小を区別しません。</p></div>
+          <h2 className="sr-only">商品を探す</h2>
+          <form className="search-panel" role="search" onSubmit={(event) => { event.preventDefault(); setPage(1); }}><label htmlFor="search">商品名・ショップ名</label><div className="search-line"><input ref={searchRef} id="search" type="search" placeholder="検索する言葉を入力" value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} /><button type="submit" className="solid">検索</button></div><p className="search-help">スペース区切りでAND検索。全角・半角、英字の大小を区別しません。</p></form>
           {!catalog && !error && <div className="empty panel" role="status">商品データを読み込んでいます…</div>}
           {error && <div className="empty panel" role="alert"><h3>商品データを読み込めませんでした</h3><p>{error}</p><button onClick={() => setReload((value) => value + 1)}>もう一度読み込む</button></div>}
           {catalog && <>
-            <div className="result-summary" role="status"><span><strong>{results.length}</strong> 件表示 <span className="muted">/ 全{catalog.products.length}件</span></span><span className="muted">非表示 {catalog.products.length - available.length}件</span></div>
-            {results.length === 0 ? <div className="empty panel"><h3>表示できる商品がありません</h3><p>検索語を変えるか、非表示の設定を確認してください。</p><div className="actions"><button onClick={() => { setQuery(''); setPage(1); }}>検索を解除</button><button onClick={() => setView('settings')}>非表示を確認</button></div></div> : <div className="product-grid">{visible.map((product, index) => <article className="product-card" key={product.id}>
-              <div className="card-top"><span className="card-number">{String((currentPage - 1) * PAGE_SIZE + index + 1).padStart(2, '0')}</span><span className="sample-label">架空の商品</span></div>
-              <p className="shop-name">{product.shopName}</p><h3>{product.name}</h3><p className="price">{product.priceLabel}</p>
-              {product.url ? <a className="product-link" href={product.url} target="_blank" rel="noopener noreferrer">BOOTHで確認 ↗</a> : <p className="sample-link-note">サンプルのため購入リンクはありません</p>}
-              <div className="card-actions"><button disabled={hidden.blocked} onClick={() => hide(product, 'items')}>この商品を非表示</button><button disabled={hidden.blocked} onClick={() => hide(product, 'shops')}>ショップを非表示</button></div>
-            </article>)}</div>}
+            <div className="toolbar"><p className="result-summary" role="status"><strong>{results.length}</strong>件<span className="hidden-summary">非表示 {catalog.products.length - available.length}件</span></p><div className="display-controls"><select aria-label="並び順" value={catalog.mode === 'sample' ? sortOrder : 'source'} onChange={(event) => { setSortOrder(event.target.value as SortOrder); setPage(1); }}>{catalog.mode === 'sample' ? <><option value="new">新着順（仮）</option><option value="popular">人気順（仮）</option></> : <option value="source">{catalog.orderLabel}</option>}</select><ViewToggle value={display} onChange={setDisplay} /></div></div>
+            {catalog.mode === 'sample' && <p className="order-note">並び順は操作確認用の仮設定です。BOOTHの新着順・人気順を再現したものではありません。</p>}
+            {results.length === 0 ? <div className="empty panel"><h3>表示できる商品がありません</h3><p>検索語を変えるか、非表示の設定を確認してください。</p><div className="actions"><button onClick={() => { setQuery(''); setPage(1); }}>検索を解除</button><button onClick={() => setView('settings')}>非表示を確認</button></div></div> : <div className={`products ${display === 'list' ? 'list' : ''}`}>{visible.map((product) => <ProductCard key={product.id} product={product} mode={catalog.mode} disabled={hidden.blocked} onHide={(kind) => hide(product, kind)} />)}</div>}
             {pages > 1 && <nav className="pagination" aria-label="商品一覧のページ"><button disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)}>前へ</button><span>{currentPage} / {pages}</span><button disabled={currentPage >= pages} onClick={() => setPage(currentPage + 1)}>次へ</button></nav>}
             <div className="source-note"><strong>データについて</strong><p>{catalog.coverage}</p><p>取得元：{catalog.sourceUrl ? <a href={catalog.sourceUrl} target="_blank" rel="noopener noreferrer">BOOTH公開ページ</a> : '架空のサンプルデータ'}<br />最終取得日時：{catalog.fetchedAt ? new Date(catalog.fetchedAt).toLocaleString('ja-JP') : '該当なし（未取得）'}</p><p>実データ公開後も、価格や販売状況の最終確認・購入はBOOTHの商品ページで行ってください。</p></div>
           </>}
         </> : <>
-          <div className="section-heading"><div><p className="eyebrow">YOUR PREFERENCES</p><h2>非表示の管理</h2></div></div>
+          <div className="section-heading"><h2 ref={settingsHeadingRef} tabIndex={-1}>非表示の管理</h2></div>
           <div className="device-note panel"><h3>このブラウザだけの設定です</h3><p>BOOTH公式の非表示リストとは別です。端末・ブラウザ間では自動同期されず、ブラウザのデータ消去などで失われることがあります。</p><p>PC・iPhone・iPad間の移行やバックアップには、JSONの書き出し・取り込みを使ってください。固定の200件制限はありませんが、保存容量は有限です。</p></div>
           <RemovedEntries title="非表示の商品" entries={hidden.list.items} disabled={hidden.blocked} onRestore={(id) => restore(id, 'items')} />
           <RemovedEntries title="非表示のショップ" entries={hidden.list.shops} disabled={hidden.blocked} onRestore={(id) => restore(id, 'shops')} />
@@ -179,7 +170,6 @@ export function App() {
           </section>
         </>}
       </main>
-    </div>
     <footer className="shell footer"><strong>BOOTHクイズ検索（仮）</strong><p>BOOTH・ピクシブ株式会社の公式サービスではありません。現在はサンプルデータでの試作段階です。</p></footer>
   </>;
 }
