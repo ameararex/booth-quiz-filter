@@ -51,7 +51,7 @@ article { min-width: 0; display: flex; flex-direction: column; }
 .products article { transition: opacity 180ms ease-out, transform 180ms ease-out; }
 .products article.is-hiding { opacity: 0; transform: translateY(4px) scale(.985); pointer-events: none; }
 .toast-region { position: fixed; z-index: 100; bottom: calc(28px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); width: max-content; max-width: calc(100% - 32px); pointer-events: none; }
-.toast { padding: 12px 20px; border: 1px solid #86b8e1; border-radius: 4px; background: #fff; color: #172b42; box-shadow: 0 4px 20px #173e6426; font-size: 13px; overflow-wrap: anywhere; animation: toast-in 160ms ease-out; }
+.toast { padding: 12px 20px; border: 1px solid #93c9a6; border-radius: 4px; background: #e4f5e9; color: #204b32; box-shadow: 0 4px 20px #173e6426; font-size: 13px; overflow-wrap: anywhere; animation: toast-in 160ms ease-out; }
 .toast span { display: block; color: #8a3f14; }
 @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 @media (prefers-reduced-motion: reduce) { .products article { transition: none; } .products article.is-hiding { transform: none; } .toast { animation: none; } }

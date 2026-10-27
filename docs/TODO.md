@@ -201,3 +201,9 @@ Windowsでログ保存先が制限される場合、XDG_CONFIG_HOMEを作業デ�
 - 別originの検証画面localhost:4174で画像表示（scrollY 1445→1445）・一覧表示（630→630）、フェード中のクラス、通知、上部成功文の非表示、自動消去を確認。保存失敗は上部警告と通知の両方で知らせる。
 - 本番デプロイ・データ収集は起動しない。ユーザーはQue-Fil site deployで今回の画面変更を商品データを保持したまま公開できる。
 - 37テスト・型チェック・ビルド成功。
+
+## 通知の薄緑背景とfavicon
+
+- ユーザー指定で下中央の通知を薄緑背景（#e4f5e9）・緑の枠・濃緑の文字へ変更。ローカル画面で背景色と表示を確認。
+- C:/Git/que-in/public/apple-touch-icon.png（180×180）をpublic/apple-touch-icon.pngへそのままコピー。index.htmlからfaviconとapple-touch-iconの両方で参照する。コピー元・コピー先のハッシュ一致、distへの同一画像の出力を確認。
+- ビルド成功。本番のデプロイ・収集は未実行。ユーザーはQue-Fil site deployで商品データを保持したまま反映できる。
