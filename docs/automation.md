@@ -1,6 +1,6 @@
 # Que-Filの自動更新
 
-Cloudflare Cron → GitHub workflow_dispatch → 収集・検証 → Workers Static Assetsへ直接デプロイする。PCの常時稼働や生成JSONのコミットは不要。本番Actionsでの動作確認中。全件収集・定期起動は停止中。
+Cloudflare Cron → GitHub workflow_dispatch → 収集・検証 → Workers Static Assetsへ直接デプロイする。PCの常時稼働や生成JSONのコミットは不要。本番の4,447商品取得は確認済み。定期起動は未有効化。
 
 ## ファイルと初期状態
 
@@ -11,15 +11,26 @@ Cloudflare Cron → GitHub workflow_dispatch → 収集・検証 → Workers Sta
 - 実行中・待機中のジョブ、または直近5時間の手動/API起動があればCronからの起動をスキップする。失敗していても連続再試行はしない。Actions側にも同時実行制御を置く。
 - Actionsには100分の上限を設定。フル収集時のHTMLキャッシュは最大6時間。各Actionsは新規ランナーで起動し、実行間のHTMLキャッシュの復元はしない。Actionsのキャッシュ・成果物アップロードは現時点では使わない。
 
-## 有効化する手順
+## 有効化する手順（PCのコマンド不要）
 
-1. 変更をGitHubのmainへ反映し、Actions画面からmode=probeで実行。GitHubの環境から3ページ取得できることを確認する。
-2. 対象リポジトリだけに限定したGitHub Fine-grained PATを作る。Actionsの読み書き権限を付ける。トークン期限を記録する。
-3. `npx wrangler secret put GITHUB_DISPATCH_TOKEN --config wrangler.scheduler.jsonc` で起動用WorkerのSecretに保存する。チャット・コード・公開JSONには貼らない。
-4. 起動用Workerは `npx wrangler deploy --config wrangler.scheduler.jsonc` で別途公開する。SCHEDULER_ENABLEDをtrueにして再デプロイすると定期起動を開始する。COLLECTION_MODEは検証中probeを維持。
-5. 全件テストへ進む段階で、GitHub Repository variable `ALLOW_FULL_COLLECTION=true` を設定し、手動でmode=fullを実行する。この時点では公開しない。
-6. 公開条件・共有用D1の設定等が整った後、GitHub Secretsへ `CLOUDFLARE_API_TOKEN` と `CLOUDFLARE_ACCOUNT_ID` を設定する。APIトークンの対象アカウント・権限を必要範囲に絞る。D1の実DB IDはRepository variable SHARES_DATABASE_IDに設定する。最初のサイト公開はGitHub ActionsのQue-Fil initial deployで実施し、Repository variable `CATALOG_SITE_URL` にそのHTTPS originを設定する。`ENABLE_CATALOG_DEPLOY=true` にするとfull成功時だけ公開する。
-7. 最後に起動用WorkerのCOLLECTION_MODEをfullへ変更して再デプロイする。6時間更新の目標となるが、起動・完了時刻の保証はない。
+1. GitHub個人設定 → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token。Resource ownerはameararex、Repository accessはOnly select repositoriesでbooth-quiz-filterだけを選ぶ。Repository permissionsのActionsをRead and writeにする。自動付与のMetadata以外の追加権限は不要。名前はQue-Fil schedulerなど、有効期限は運用できる日数（例90日）を選び、期限を控える。
+2. リポジトリSettings → Secrets and variables → Actions → SecretsのNew repository secretで、GH_WORKFLOW_DISPATCH_TOKENに作成したトークンを保存。トークンはチャットやVariableへ貼らない。既存のCLOUDFLARE_API_TOKEN/CLOUDFLARE_ACCOUNT_ID/SHARES_DATABASE_IDは再作成不要。
+3. 同じ画面のVariablesに次を登録（既存なら確認）する。
+
+| Repository Variable | 値 |
+| --- | --- |
+| CATALOG_SITE_URL | https://que-fil.ameararex.com |
+| ALLOW_FULL_COLLECTION | true |
+| ENABLE_CATALOG_DEPLOY | true |
+
+4. Actions → Que-Fil scheduler deploy → Run workflow → mainを選び、enabledはチェックしたまま実行。起動用Workerを一旦無効で公開し、GitHubトークンをCloudflareのGITHUB_DISPATCH_TOKENへ登録後、fullモードで有効化する。トークン登録失敗時は有効化へ進まない。既存のサイト・D1はこのジョブでは変更しない。
+5. 成功したら次の日本時間04:00/10:00/16:00/22:00でQue-Fil collectionが自動起動し、mode=fullで収集→公開することを確認。起動用Workerの公開直後に収集は開始しない。すぐ収集パイプラインだけ確認したい場合はQue-Fil collectionをmode=fullで手動実行できるが、直近5時間の手動実行があると次のCronはスキップする。Cron経由の動作は次の対象時刻で別途確認する。
+
+標準ランナーを使う公開リポジトリを前提にする。トークン期限切れ前には新トークンを同じRepository Secretへ保存し、Que-Fil scheduler deployをenabled付きで再実行する。GitHub側のSecret更新だけではCloudflare側のトークンは置き換わらない。
+
+## 自動更新だけを止める
+
+Que-Fil scheduler deployをenabledのチェックを外して実行する。サイト公開や保存済み共有リンクは継続する。実行中の収集は別途Actionsでキャンセルする。Cron設定自体は残るが、起動用WorkerはGitHubへ通信しない。再開はenabled付きで同じワークフローを実行する。
 
 API起動受付と収集・公開の成功は別。起動用WorkerのエラーはCloudflare側、収集・公開の失敗はActions履歴で確認する。GitHubのActions通知設定・Cloudflareのエラー監視は有効化時に確認する。独立した通知先への自動通知・更新遅延の自動警報は未実装。トークン期限切れや権限変更も停止原因になる。
 

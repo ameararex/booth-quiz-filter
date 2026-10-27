@@ -13,7 +13,7 @@
 ## 残作業（現時点の優先順）
 
 - [ ] 6時間の自動更新を有効化。リポジトリ内のscheduler設定はSCHEDULER_ENABLED=false・COLLECTION_MODE=probe。実際のCloudflare側の公開状態/Secretsは未確認。日本時間04:00/10:00/16:00/22:00に全件収集→成功時だけ公開する設定へ進める。
-- [ ] GitHub起動用Fine-grained PAT（対象リポジトリ・Actions権限）とCloudflare schedulerのSecretを設定。既存の共有用D1は再作成不要。CATALOG_SITE_URL・ALLOW_FULL_COLLECTION・ENABLE_CATALOG_DEPLOYのVariablesを確認。PC操作を不要にするため、起動用Workerの公開/Secret登録もActionsにまとめる作業が残る。
+- [ ] GitHub起動用Fine-grained PAT（対象リポジトリ・Actions権限）とCloudflare schedulerのSecretを設定。既存の共有用D1は再作成不要。CATALOG_SITE_URL・ALLOW_FULL_COLLECTION・ENABLE_CATALOG_DEPLOYのVariablesを確認。起動用Workerの公開/Secret登録はQue-Fil scheduler deployから実行できる。
 - [ ] Cron→Actions→全件収集→公開の1周期を実測し、失敗通知・トークン期限の管理方法を確定。6時間ちょうどの完了は保証せず、画面の最終更新で確認する。
 - [ ] 本番で共有リンクの作成・別ブラウザ取り込み・期限表示を確認（匿名公開APIの自動テスト/ローカル確認と本番実測は別）。D1の行読み書き・CPU・容量も未測定。
 - [ ] iPhone/iPad実機で検索・表示・非表示・共有/JSON移行を確認。
@@ -202,3 +202,11 @@ Windowsでログ保存先が制限される場合、XDG_CONFIG_HOMEを作業デ�
 - 重複抑制を直近11時間から5時間へ変更。6時間前の完了ジョブが次回を妨げないこと、5時間未満の起動はスキップすることを通信なしで検証。進行中のジョブがあれば経過時間に関係なくスキップする。
 - SCHEDULER_ENABLED=false・COLLECTION_MODE=probeは維持。起動用Secretと公開手順の準備後に有効化する。今回は自動実行の有効化・本番公開・BOOTHへの収集を行わない。
 - 38テスト・型チェック・ビルド成功。CronのUTC指定を日本時間へ換算し04:00/10:00/16:00/22:00になることを確認。
+
+## 自動更新の有効化手順をActionsへ統一
+
+- ユーザーの手順案内依頼に合わせ、Que-Fil scheduler deployを追加。enabled付きで、起動用Workerを無効で公開→Repository Secret GH_WORKFLOW_DISPATCH_TOKENをCloudflare Secretへ登録→fullモードで有効化。登録失敗時は有効化へ進まない。enabledを外すと自動起動だけを停止できる。
+- 有効化前に3つのRepository Variablesとトークン設定を検査。既存のCloudflare SecretsとD1 IDはそのまま利用する。起動直後の全件取得は行わず、次の定刻から開始する。トークンは環境変数と標準入力で渡し、ファイルや出力へ書き出さない。
+- ユーザー作業はGitHub Fine-grained PAT（このリポジトリだけ、Actions Read and write）の作成、Repository Secretへの保存、Variablesの確認、Actions実行。詳細はdocs/automation.md。期限更新時にもActionsの再実行が必要。
+- 今回は手順とワークフローの準備のみ。認証情報は未取得で、Cloudflareへの公開・Secret登録・定期実行は未実施。
+- ワークフローのYAML、無効で公開→Secret登録→有効化の順序、enabled条件、実際のNodeスクリプトが生成するfullモード/有効・無効設定を通信なしで検証。起動用WorkerのWranglerドライラン成功（実公開なし）。

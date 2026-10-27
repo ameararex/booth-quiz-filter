@@ -1,0 +1,77 @@
+name: Que-Fil scheduler deploy
+on:
+  workflow_dispatch:
+    inputs:
+      enabled:
+        description: '6時間ごとの全件取得を有効にする（外すと自動起動を停止）'
+        type: boolean
+        default: true
+permissions:
+  contents: read
+concurrency:
+  group: que-fil-scheduler-deploy
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.13.0'
+      - run: npm ci
+      - name: Check enablement settings
+        if: inputs.enabled
+        env:
+          GH_WORKFLOW_DISPATCH_TOKEN: ${{ secrets.GH_WORKFLOW_DISPATCH_TOKEN }}
+          ALLOW_FULL_COLLECTION: ${{ vars.ALLOW_FULL_COLLECTION }}
+          ENABLE_CATALOG_DEPLOY: ${{ vars.ENABLE_CATALOG_DEPLOY }}
+          CATALOG_SITE_URL: ${{ vars.CATALOG_SITE_URL }}
+        run: |
+          test -n "$GH_WORKFLOW_DISPATCH_TOKEN" || { echo 'Repository Secret GH_WORKFLOW_DISPATCH_TOKENを設定してください。'; exit 1; }
+          test "$ALLOW_FULL_COLLECTION" = true || { echo 'Repository Variable ALLOW_FULL_COLLECTIONをtrueにしてください。'; exit 1; }
+          test "$ENABLE_CATALOG_DEPLOY" = true || { echo 'Repository Variable ENABLE_CATALOG_DEPLOYをtrueにしてください。'; exit 1; }
+          test "$CATALOG_SITE_URL" = 'https://que-fil.ameararex.com' || { echo 'Repository Variable CATALOG_SITE_URLに本番originを設定してください。'; exit 1; }
+      - run: npm run check
+      - name: Prepare disabled scheduler in full collection mode
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          const path = 'wrangler.scheduler.jsonc';
+          const config = JSON.parse(readFileSync(path, 'utf8'));
+          config.vars.SCHEDULER_ENABLED = 'false';
+          config.vars.COLLECTION_MODE = 'full';
+          writeFileSync(path, JSON.stringify(config, null, 2) + '\n');
+          NODE
+      - name: Deploy scheduler without automatic dispatch
+        run: npx wrangler deploy --config wrangler.scheduler.jsonc
+      - name: Store GitHub dispatch token in Cloudflare
+        if: inputs.enabled
+        env:
+          GH_WORKFLOW_DISPATCH_TOKEN: ${{ secrets.GH_WORKFLOW_DISPATCH_TOKEN }}
+        run: printf '%s' "$GH_WORKFLOW_DISPATCH_TOKEN" | npx wrangler secret put GITHUB_DISPATCH_TOKEN --config wrangler.scheduler.jsonc
+      - name: Enable scheduled dispatch
+        if: inputs.enabled
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          const path = 'wrangler.scheduler.jsonc';
+          const config = JSON.parse(readFileSync(path, 'utf8'));
+          config.vars.SCHEDULER_ENABLED = 'true';
+          writeFileSync(path, JSON.stringify(config, null, 2) + '\n');
+          NODE
+          npx wrangler deploy --config wrangler.scheduler.jsonc
+      - name: Report scheduler state
+        env:
+          ENABLED: ${{ inputs.enabled }}
+        run: |
+          if [ "$ENABLED" = true ]; then
+            echo '日本時間04:00・10:00・16:00・22:00の全件収集を有効にしました。初回は次の定刻です。' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo '自動起動を停止しました。実行中の収集とサイト公開は継続します。' >> "$GITHUB_STEP_SUMMARY"
+          fi
