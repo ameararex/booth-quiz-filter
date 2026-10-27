@@ -3,9 +3,9 @@ on:
   workflow_dispatch:
     inputs:
       full_after_probe:
-        description: '3ページ取得と初回デプロイに成功したら、そのまま全件取得・デプロイへ進む'
+        description: 'クイズタグ新着順の3ページ検証後、全件取得まで進める（再開を決めた時のみ有効にする）'
         type: boolean
-        default: true
+        default: false
 permissions:
   contents: read
 concurrency:

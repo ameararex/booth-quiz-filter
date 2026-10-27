@@ -22,3 +22,11 @@ test('仮表紙は既知のサンプルIDだけに表示し、実商品や未知
   assert.equal(thumbnailFor(products[0], 'live'), null);
   assert.equal(thumbnailFor({ ...products[0], id: 'unknown' }, 'sample'), null);
 });
+
+test('価格・スキは全て同じ新着取得範囲で計算し、同数は新着順、不明値は末尾', () => {
+  const rows = products.map((p, i) => ({ ...p, priceYen: [100, 0, 100][i], likes: [31, null, 31][i] }));
+  const sorts = { new: { label: '新着順', url: 'https://booth.pm/?sort=new', fetchedAt: '2026-10-27T00:00:00Z', pageCount: 1, hasMore: false, categoryTotal: 3, ids: [rows[2].id, rows[0].id, rows[1].id] } };
+  assert.deepEqual(sortProducts(rows, 'live', 'price_asc', sorts).map(p => p.id), [rows[1].id, rows[2].id, rows[0].id]);
+  assert.deepEqual(sortProducts(rows, 'live', 'price_desc', sorts).map(p => p.id), [rows[2].id, rows[0].id, rows[1].id]);
+  assert.deepEqual(sortProducts(rows, 'live', 'wish_lists', sorts).map(p => p.id), [rows[2].id, rows[0].id, rows[1].id]);
+});

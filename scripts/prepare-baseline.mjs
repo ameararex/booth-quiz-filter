@@ -8,7 +8,7 @@ async function json(path) {
   const response = await fetch(new URL(path, origin), { redirect: 'error', signal: AbortSignal.timeout(20000), cache: 'no-store' });
   if (!response.ok || !response.headers.get('content-type')?.includes('application/json')) throw new Error('公開中データを確認できません。');
   const text = await response.text();
-  if (Buffer.byteLength(text) > 5 * 1024 * 1024) throw new Error('公開中データが容量上限を超えています。');
+  if (Buffer.byteLength(text) > 20 * 1024 * 1024) throw new Error('公開中データが容量上限を超えています。');
   return JSON.parse(text);
 }
 const manifest = await json('/data/manifest.json');

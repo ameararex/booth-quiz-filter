@@ -1,6 +1,6 @@
 import { CATEGORY_URL, parseBoothPage } from './booth-parser.mjs';
 
-export async function collectSortPages({ key, label, readPage, onPage = () => {}, maxPages = 100 }) {
+export async function collectSortPages({ key, label, readPage, onPage = () => {}, maxPages = Infinity }) {
   const products = new Map();
   const signatures = new Set();
   let url = new URL(CATEGORY_URL);
@@ -12,7 +12,6 @@ export async function collectSortPages({ key, label, readPage, onPage = () => {}
     if (signatures.has(signature)) throw new Error('同じ商品ページが繰り返されたため停止します。');
     signatures.add(signature);
     for (const product of parsed.products) if (!products.has(product.id)) products.set(product.id, product);
-    if (products.size > 5000) throw new Error('管理対象5,000商品の検証予算を超えたため停止します。');
     const snapshot = { label, url: key === 'popularity' ? CATEGORY_URL : `${CATEGORY_URL}?sort=${key}`, fetchedAt: cache.fetchedAt, pageCount: page, hasMore: parsed.hasMore, categoryTotal: parsed.categoryTotal, ids: [...products.keys()] };
     await onPage(snapshot);
     if (!parsed.hasMore) return { snapshot, products: [...products.values()] };

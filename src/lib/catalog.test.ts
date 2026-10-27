@@ -5,6 +5,13 @@ import { boothUrl, parseCatalog, validThumbnail } from './catalog.ts';
 
 const sample = JSON.parse(readFileSync(new URL('../../test-fixtures/catalog.sample.v1.json', import.meta.url), 'utf8').replace(/^\uFEFF/, '')) as unknown;
 
+test('5,000件超を検証でき、価格・スキ数の不正値は拒否する', () => {
+  const base = parseCatalog(sample);
+  const products = Array.from({ length: 6001 }, (_, i) => ({ ...base.products[0], id: `large-${i}`, priceYen: 100, likes: 0 }));
+  assert.equal(parseCatalog({ ...base, products }).products.length, 6001);
+  for (const fields of [{ priceYen: -1 }, { likes: '31' }, { likes: 1.2 }]) assert.throws(() => parseCatalog({ ...base, products: [{ ...products[0], ...fields }] }));
+});
+
 test('BOOTHのHTTPS URLだけを許可する', () => {
   assert.equal(boothUrl('https://booth.pm/ja/items/123'), true);
   assert.equal(boothUrl('https://sample.booth.pm/items/123'), true);

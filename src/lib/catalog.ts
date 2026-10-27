@@ -1,9 +1,10 @@
 import { isRecord, validId, validText } from './filters.ts';
 
-export const SORT_OPTIONS = { popularity: '人気順', new: '新着順', wish_lists: 'スキ順', price_desc: '価格が高い順', price_asc: '価格が低い順' } as const;
+export const SORT_OPTIONS = { new: '新着順', wish_lists: 'スキ順', price_desc: '価格が高い順', price_asc: '価格が低い順' } as const;
+const SNAPSHOT_OPTIONS = { ...SORT_OPTIONS, popularity: '人気順' } as const;
 export type BoothSort = keyof typeof SORT_OPTIONS;
 export type SortSnapshot = { label: string; url: string; fetchedAt: string; pageCount: number; hasMore: boolean; categoryTotal: number | null; ids: string[] };
-export type Product = { id: string; name: string; shopId: string; shopName: string; priceLabel: string; url: string | null; thumbnailUrl?: string | null };
+export type Product = { id: string; name: string; shopId: string; shopName: string; priceLabel: string; url: string | null; thumbnailUrl?: string | null; priceYen?: number | null; likes?: number | null };
 export type Catalog = {
   version: 1; mode: 'sample' | 'live'; sourceUrl: string | null; fetchedAt: string | null;
   coverage: string; orderLabel: string; products: Product[]; sorts?: Partial<Record<BoothSort, SortSnapshot>>;
@@ -28,8 +29,7 @@ export function boothUrl(value: unknown): value is string {
 
 export function parseCatalog(value: unknown): Catalog {
   if (!isRecord(value) || value.version !== 1 || !['sample', 'live'].includes(String(value.mode)) ||
-    !validText(value.coverage, 2000) || !validText(value.orderLabel) || !Array.isArray(value.products) ||
-    value.products.length > 5000) throw new Error('商品データの形式に対応していません。');
+    !validText(value.coverage, 2000) || !validText(value.orderLabel) || !Array.isArray(value.products)) throw new Error('商品データの形式に対応していません。');
   const sample = value.mode === 'sample';
   if (sample ? (value.sourceUrl !== null || value.fetchedAt !== null) :
     (!boothUrl(value.sourceUrl) || typeof value.fetchedAt !== 'string' || !Number.isFinite(Date.parse(value.fetchedAt)))) {
@@ -44,16 +44,17 @@ export function parseCatalog(value: unknown): Catalog {
       throw new Error('商品ページのURLではありません。');
     }
     const thumbnailUrl = entry.thumbnailUrl ?? null;
+    for (const field of ['priceYen', 'likes']) if (entry[field] !== undefined && entry[field] !== null && (!Number.isSafeInteger(entry[field]) || Number(entry[field]) < 0)) throw new Error('価格またはスキ数が不正です。');
     if (thumbnailUrl !== null && (sample || !validThumbnail(thumbnailUrl))) throw new Error('未確認のサムネイルURLです。');
     seen.add(entry.id);
-    return { id: entry.id, name: entry.name, shopId: entry.shopId, shopName: entry.shopName, priceLabel: entry.priceLabel, url: entry.url as string | null, thumbnailUrl };
+    return { id: entry.id, name: entry.name, shopId: entry.shopId, shopName: entry.shopName, priceLabel: entry.priceLabel, url: entry.url as string | null, thumbnailUrl, priceYen: entry.priceYen as number | null | undefined, likes: entry.likes as number | null | undefined };
   });
   let sorts: Catalog['sorts'];
   if (value.sorts !== undefined) {
     if (!isRecord(value.sorts) || !Object.keys(value.sorts).length) throw new Error('並び順の情報が不正です。');
     sorts = {};
     for (const [key, entry] of Object.entries(value.sorts)) {
-      if (!(key in SORT_OPTIONS) || !isRecord(entry) || entry.label !== SORT_OPTIONS[key as BoothSort] || !boothUrl(entry.url) ||
+      if (!Object.hasOwn(SNAPSHOT_OPTIONS, key) || !isRecord(entry) || entry.label !== SNAPSHOT_OPTIONS[key as keyof typeof SNAPSHOT_OPTIONS] || !boothUrl(entry.url) ||
         (new URL(entry.url).searchParams.get('sort') ?? 'popularity') !== key || typeof entry.fetchedAt !== 'string' || !Number.isFinite(Date.parse(entry.fetchedAt)) ||
         !Number.isInteger(entry.pageCount) || Number(entry.pageCount) < 1 || typeof entry.hasMore !== 'boolean' ||
         (entry.categoryTotal !== null && (!Number.isInteger(entry.categoryTotal) || Number(entry.categoryTotal) < 0)) ||
@@ -72,7 +73,7 @@ async function getJson(path: string, signal: AbortSignal): Promise<unknown> {
   if (!response.ok) throw new Error(`商品データの取得に失敗しました（${response.status}）。`);
   if (!response.headers.get('content-type')?.includes('application/json')) throw new Error('JSONデータを受信できませんでした。');
   const text = await response.text();
-  if (new TextEncoder().encode(text).byteLength > 5 * 1024 * 1024) throw new Error('商品データが読み込み容量の上限を超えています。');
+  if (new TextEncoder().encode(text).byteLength > 20 * 1024 * 1024) throw new Error('商品データが読み込み容量の上限を超えています。');
   return JSON.parse(text) as unknown;
 }
 

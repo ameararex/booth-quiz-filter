@@ -16,10 +16,20 @@ export function thumbnailFor(product: Product, mode: Catalog['mode']): string | 
 
 export function sortProducts(products: Product[], mode: Catalog['mode'], order: SortOrder, sorts?: Catalog['sorts']): Product[] {
   if (mode === 'live') {
-    const snapshot = order === 'source' ? undefined : sorts?.[order];
-    if (!snapshot) return products;
+    const snapshot = sorts?.new;
     const byId = new Map(products.map((product) => [product.id, product]));
-    return snapshot.ids.map((id) => byId.get(id)).filter((product): product is Product => Boolean(product));
+    const source = snapshot ? snapshot.ids.map((id) => byId.get(id)).filter((product): product is Product => Boolean(product)) : [...products];
+    if (order === 'wish_lists' || order === 'price_asc' || order === 'price_desc') {
+      const field = order === 'wish_lists' ? 'likes' : 'priceYen';
+      const direction = order === 'price_asc' ? 1 : -1;
+      return source.sort((a, b) => {
+        const left = a[field], right = b[field];
+        if (left == null) return right == null ? 0 : 1;
+        if (right == null) return -1;
+        return direction * (left - right);
+      });
+    }
+    return source;
   }
   if (order === 'source' || order === 'new') return products;
   const sampleOrders = {

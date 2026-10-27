@@ -1,37 +1,38 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdir, mkdtemp, readFile, writeFile, rm, cp } from 'node:fs/promises';
-import { resolve, join, sep } from 'node:path';
-import { spawnSync } from 'node:child_process';
-import { pathToFileURL } from 'node:url';
-import { CATEGORY_URL } from './booth-parser.mjs';
+import { collectTaggedProducts, parseLikes } from './tag-collection.mjs';
 
-test('3ページ検証の公開オプションは新規取得順だけ更新し、他の並び順を保持する（通信なし）', async () => {
-  const root = resolve('.wrangler/tests');
-  await mkdir(root, { recursive: true });
-  const temp = await mkdtemp(join(root, 'probe-'));
-  try {
-    await cp('public/data', join(temp, 'public/data'), { recursive: true });
-    await mkdir(join(temp, '.wrangler/booth-cache'), { recursive: true });
-    await writeFile(join(temp, 'no-network.mjs'), 'globalThis.fetch = async () => { throw new Error("Network must not be used"); };');
-    const previousManifest = JSON.parse(await readFile(join(temp, 'public/data/manifest.json'), 'utf8'));
-    const previous = JSON.parse(await readFile(join(temp, 'public', previousManifest.catalog), 'utf8'));
-    for (let page = 1; page <= 3; page++) {
-      const id = `9999900${page}`;
-      const html = `<h1>クイズ</h1><li class="item-card" data-product-id="${id}" data-product-brand="test-shop"><div class="item-card__title"><a href="https://booth.pm/ja/items/${id}">テスト問題集</a></div><a class="item-card__shop-name-anchor" href="https://test-shop.booth.pm/"><span class="item-card__shop-name">店</span></a><div class="price">¥ 100</div></li><a rel="next" href="?page=${page + 1}">次</a>`;
-      await writeFile(join(temp, `.wrangler/booth-cache/${page === 1 ? 'popularity' : `popularity.${page}`}.json`), JSON.stringify({ html, fetchedAt: new Date().toISOString(), url: page === 1 ? CATEGORY_URL : `${CATEGORY_URL}?page=${page}` }));
-    }
-    const child = spawnSync(process.execPath, ['--import', pathToFileURL(join(temp, 'no-network.mjs')).href, resolve('scripts/probe-three-booth.mjs'), '--publish'], { cwd: temp, encoding: 'utf8', windowsHide: true });
-    assert.equal(child.status, 0, child.stderr);
-    const manifest = JSON.parse(await readFile(join(temp, 'public/data/manifest.json'), 'utf8'));
-    const catalog = JSON.parse(await readFile(join(temp, 'public', manifest.catalog), 'utf8'));
-    assert.deepEqual(catalog.sorts.popularity.ids, ['99999001', '99999002', '99999003']);
-    assert.equal(catalog.sorts.popularity.pageCount, 3);
-    assert.equal(catalog.sorts.popularity.hasMore, true);
-    assert.deepEqual(catalog.sorts.new, previous.sorts.new);
-    assert.equal(catalog.products.length, previous.products.length + 3);
-  } finally {
-    assert.ok(temp.startsWith(root + sep));
-    await rm(temp, { recursive: true, force: true });
-  }
+const page = (ids, next = '') => `<h1>クイズ</h1>${ids.map(id => `<li class="item-card" data-product-id="${id}" data-product-brand="test-shop" data-product-price="150"><div class="item-card__title"><a href="https://booth.pm/ja/items/${id}">問題集</a></div><a class="item-card__shop-name-anchor" href="https://test-shop.booth.pm/"><span class="item-card__shop-name">店</span></a><div class="price">¥ 150~</div></li>`).join('')}${next ? `<a rel="next" href="${next}">次</a>` : ''}`;
+const next = (n) => `?tags%5B%5D=%E3%82%AF%E3%82%A4%E3%82%BA&sort=new&page=${n}`;
+const cached = (html) => ({ html, fetchedAt: '2026-10-27T00:00:00Z' });
+const readLikes = async (ids) => ({ item_ids: ['not-collected'], wishlists_counts: Object.fromEntries(ids.map(id => [id, 31])) });
+
+test('タグの新着順を保持し、価格・一括スキ数を保存する。欠損を0と推測しない', async () => {
+  const result = await collectTaggedProducts({ readPage: async (_url, n) => cached(page(n === 1 ? ['3', '1'] : ['2'], n === 1 ? next(2) : '')), readLikes });
+  assert.deepEqual(result.snapshot.ids, ['3', '1', '2']);
+  assert.equal(result.snapshot.hasMore, false);
+  assert.equal(result.products[0].likes, 31);
+  assert.equal(result.products[0].priceYen, 150);
+  assert.equal('item_ids' in result.products[0], false);
+  assert.deepEqual([...parseLikes({ wishlists_counts: { '1': 0 } }, ['1', '2'])], [['1', 0], ['2', null]]);
+  assert.throws(() => parseLikes({ wishlists_counts: { '1': -1 } }, ['1']));
+});
+
+test('3ページ検証は部分取得として返し、タグ消失・反復・スキ取得失敗で停止する', async () => {
+  const partial = await collectTaggedProducts({ pageLimit: 3, readPage: async (_url, n) => cached(page([String(n)], next(n + 1))), readLikes });
+  assert.equal(partial.snapshot.hasMore, true);
+  assert.equal(partial.snapshot.pageCount, 3);
+  await assert.rejects(collectTaggedProducts({ readPage: async () => cached(page(['1'], '?sort=new&page=2')), readLikes }), /タグ/);
+  await assert.rejects(collectTaggedProducts({ readPage: async (_url,n) => cached(page(['1'], next(n+1))), readLikes }), /繰り返/);
+  await assert.rejects(collectTaggedProducts({ readPage: async () => cached(page(['1'])), readLikes: async () => { throw new Error('403'); } }), /403/);
+});
+
+test('5,000件を超えても固定件数では停止しない', async () => {
+  const result = await collectTaggedProducts({ readPage: async (_url, n) => {
+    const first = (n - 1) * 60 + 1;
+    const ids = Array.from({ length: Math.min(60, 5001 - first + 1) }, (_, i) => String(first + i));
+    return cached(page(ids, first + ids.length <= 5001 ? next(n + 1) : ''));
+  }, readLikes });
+  assert.equal(result.products.length, 5001);
+  assert.equal(result.snapshot.hasMore, false);
 });

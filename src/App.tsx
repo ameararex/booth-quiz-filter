@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { loadCatalog, SORT_OPTIONS } from './lib/catalog.ts';
-import type { BoothSort } from './lib/catalog.ts';
+
 import type { Catalog, Product } from './lib/catalog.ts';
 import { combineLists, matchesSearch, MAX_IMPORT_BYTES, parseList } from './lib/filters.ts';
 import type { HiddenEntry, HiddenList, ImportMode } from './lib/filters.ts';
@@ -102,7 +102,7 @@ export function App() {
   const scopedProducts = catalog ? sortProducts(catalog.products, catalog.mode, sortOrder, catalog.sorts) : [];
   const available = scopedProducts.filter((product) => !hiddenShops.has(product.shopId));
   const results = available.filter((product) => matchesSearch(product.name, product.shopName, query));
-  const activeSnapshot = sortOrder === 'source' ? undefined : catalog?.sorts?.[sortOrder];
+  const activeSnapshot = catalog?.sorts?.new;
   const pages = Math.max(1, Math.ceil(results.length / PAGE_SIZE));
   const currentPage = Math.min(page, pages);
   const visible = results.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
@@ -177,8 +177,9 @@ export function App() {
           {!catalog && !error && <div className="empty panel" role="status">商品データを読み込んでいます…</div>}
           {error && <div className="empty panel" role="alert"><h3>商品データを読み込めませんでした</h3><p>{error}</p><button onClick={() => setReload((value) => value + 1)}>もう一度読み込む</button></div>}
           {catalog && <>
-            <div className="toolbar"><p className="result-summary" role="status"><strong>{results.length}</strong>件<span className="hidden-summary">非表示 {scopedProducts.length - available.length}件</span></p><div className="display-controls"><select aria-label="並び順" value={catalog.mode === 'sample' || catalog.sorts ? sortOrder : 'source'} onChange={(event) => { setSortOrder(event.target.value as SortOrder); setPage(1); }}>{catalog.mode === 'sample' || catalog.sorts ? Object.entries(SORT_OPTIONS).filter(([key]) => catalog.mode === 'sample' || catalog.sorts?.[key as BoothSort]).map(([key, label]) => <option key={key} value={key}>{label}{catalog.mode === 'sample' ? '（仮）' : ''}</option>) : <option value="source">{catalog.orderLabel}</option>}</select><ViewToggle value={display} onChange={setDisplay} /></div></div>
+            <div className="toolbar"><p className="result-summary" role="status"><strong>{results.length}</strong>件<span className="hidden-summary">非表示 {scopedProducts.length - available.length}件</span></p><div className="display-controls"><select aria-label="並び順" value={catalog.mode === 'sample' || catalog.sorts ? sortOrder : 'source'} onChange={(event) => { setSortOrder(event.target.value as SortOrder); setPage(1); }}>{catalog.mode === 'sample' || catalog.sorts ? Object.entries(SORT_OPTIONS).map(([key, label]) => <option key={key} value={key} disabled={key === 'wish_lists' ? !catalog.products.some((product) => product.likes != null) : key.startsWith('price_') ? !catalog.products.some((product) => product.priceYen != null) : false}>{label}{catalog.mode === 'sample' ? '（仮）' : ''}</option>) : <option value="source">{catalog.orderLabel}</option>}</select><ViewToggle value={display} onChange={setDisplay} /></div></div>
             {activeSnapshot && <p className="order-note">{activeSnapshot.hasMore ? `BOOTHで取得した${activeSnapshot.label}の先頭${activeSnapshot.ids.length}件が対象です。検索はこの範囲内のみです。続きの商品は未取得です。` : `${activeSnapshot.label}で最後のページまで取得した${activeSnapshot.ids.length}件が対象です。取得中の変更は反映が前後する場合があります。`} <a href={activeSnapshot.url} target="_blank" rel="noopener noreferrer">BOOTHで確認 ↗</a></p>}
+            {sortOrder !== 'new' && sortOrder !== 'source' && <p className="sort-help">価格は表示の最低額で比較します。同じ価格・スキ数の商品は新着順、不明な値は末尾に表示します。</p>}
             {results.length === 0 ? <div className="empty panel"><h3>表示できる商品がありません</h3><p>検索語を変えるか、非表示の設定を確認してください。</p><div className="actions"><button onClick={() => { setQuery(''); setPage(1); }}>検索を解除</button><button onClick={() => setView('settings')}>非表示を確認</button></div></div> : <div className={`products ${display === 'list' ? 'list' : ''}`}>{visible.map((product) => <ProductCard key={product.id} product={product} mode={catalog.mode} disabled={hidden.blocked} onHide={() => hide(product)} />)}</div>}
             {pages > 1 && <nav className="pagination" aria-label="商品一覧のページ"><button disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)}>前へ</button><span>{currentPage} / {pages}</span><button disabled={currentPage >= pages} onClick={() => setPage(currentPage + 1)}>次へ</button></nav>}
           </>}

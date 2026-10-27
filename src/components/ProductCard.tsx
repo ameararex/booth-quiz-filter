@@ -19,7 +19,7 @@ export function ProductCard({ product, mode, disabled, onHide }: {
         <p className="shop" title={product.shopName}>{product.shopName}</p>
         <h3 title={product.name}>{product.url ? <a href={product.url} target="_blank" rel="noopener noreferrer">{product.name}</a> : product.name}</h3>
       </div>
-      <p className="price" title={product.priceLabel}>{product.priceLabel}</p>
+      <p className="price" title={product.priceYen != null ? `${product.priceLabel}（価格順は表示価格の最小額で比較）` : product.priceLabel}>{product.priceLabel}{product.likes != null && <span className="likes" aria-label={`スキ ${product.likes}件`}>♡ {product.likes.toLocaleString('ja-JP')}</span>}</p>
       <div className="item-actions">
         <button className="hide-shop" disabled={disabled} onClick={onHide} aria-label={`ショップを非表示：${product.shopName}`}><span className="full-label">ショップを非表示</span><span className="short-label">非表示</span></button>
       </div>
