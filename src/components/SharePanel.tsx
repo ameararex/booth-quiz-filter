@@ -55,7 +55,7 @@ export function SharePanel({ list, onPreview }: {
     finally { setBusy(false); }
   }
 
-  return <section className="panel share-panel">
+  return <section className="share-panel">
     <h3>URLで移行・共有</h3>
     <p>非表示ショップのリストをサーバーに保存し、共有URLを作ります。URLを知っている人はリストを取り込めます。有効期限は7日間です。</p>
     <button className="primary" disabled={busy || !list.shops.length} onClick={() => { void createShare(); }}>共有リンクを作る</button>

@@ -145,6 +145,14 @@ dialog li button { flex-shrink: 0; }
 .disabled { opacity: .5; cursor: default; }
 .import-preview { background: #f4faff; padding: 18px; margin-top: 20px; border: 1px solid #d4e8fa; }
 .import-preview h4 { margin: 0; }
+.transfer-panel { max-width: 800px; padding: 0; }
+.transfer-tabs { display: flex; border-bottom: 1px solid #c5d7eb; background: #f5faff; }
+.transfer-tabs button { flex: 1; min-width: 0; padding: 12px 8px; border: 0; border-bottom: 3px solid transparent; border-radius: 0; font-size: 13px; }
+.transfer-tabs button[aria-selected="true"] { background: #fff; color: #0869bc; border-bottom-color: #1687e8; font-weight: 700; }
+.transfer-tab-panel { padding: 22px; }
+.transfer-tab-panel[hidden] { display: none; }
+.transfer-panel > .import-preview { margin: 0 22px 22px; }
+.import-preview h4:focus { outline-offset: 4px; }
 fieldset { border: 1px solid #c5d7eb; margin: 16px 0; padding: 10px 14px; }
 fieldset label, .replace-confirm { display: flex; align-items: center; gap: 8px; min-height: 44px; font-size: 13px; }
 input[type="radio"], input[type="checkbox"] { accent-color: #0874d1; min-width: 18px; width: 18px; height: 18px; }

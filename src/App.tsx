@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import type { ChangeEvent } from 'react';
+import type { ChangeEvent, KeyboardEvent } from 'react';
 import { loadCatalog, SORT_OPTIONS } from './lib/catalog.ts';
 
 import type { Catalog, Product } from './lib/catalog.ts';
@@ -53,6 +53,9 @@ export function App() {
   const [pendingHide, setPendingHide] = useState<string | null>(null);
   const [toast, setToast] = useState<{ id: number; message: string } | null>(null);
   const [incoming, setIncoming] = useState<HiddenList | null>(null);
+  const [transferTab, setTransferTab] = useState<'url' | 'json'>('url');
+  const [incomingSource, setIncomingSource] = useState('');
+  const [incomingExpiresAt, setIncomingExpiresAt] = useState<string | null>(null);
   const [importError, setImportError] = useState('');
   const [importBusy, setImportBusy] = useState(false);
   const [importMode, setImportMode] = useState<ImportMode>('merge');
@@ -88,9 +91,11 @@ export function App() {
   }, [toast]);
 
   function previewShare(list: HiddenList, expiresAt: string) {
+    importSequence.current++;
+    setImportBusy(false); setIncomingSource('共有URL'); setIncomingExpiresAt(expiresAt);
     setIncoming(list); setImportMode('merge'); setReplaceConfirmed(false); setImportError('');
     setView('settings');
-    setNotice(`共有リストの内容を確認してください。有効期限：${new Date(expiresAt).toLocaleString('ja-JP')}。まだ既存設定は変更していません。`);
+    setNotice('');
   }
 
   useEffect(() => {
@@ -148,6 +153,17 @@ export function App() {
     }
   }
 
+  function transferTabKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
+    let next: 'url' | 'json';
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') next = transferTab === 'url' ? 'json' : 'url';
+    else if (event.key === 'Home') next = 'url';
+    else if (event.key === 'End') next = 'json';
+    else return;
+    event.preventDefault();
+    setTransferTab(next);
+    document.getElementById(`transfer-tab-${next}`)?.focus();
+  }
+
   async function readImport(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = '';
@@ -161,7 +177,7 @@ export function App() {
     try {
       if (file.size > MAX_IMPORT_BYTES) throw new Error('ファイルは2MB以下にしてください。');
       const next = parseList(await file.text());
-      if (sequence === importSequence.current) setIncoming(next);
+      if (sequence === importSequence.current) { setIncomingSource('JSONファイル'); setIncomingExpiresAt(null); setIncoming(next); }
     } catch (reason) {
       if (sequence === importSequence.current) setImportError(reason instanceof Error ? reason.message : 'ファイルを読み込めませんでした。');
     } finally { if (sequence === importSequence.current) setImportBusy(false); }
@@ -208,12 +224,20 @@ export function App() {
           <div className="section-heading"><h2 ref={settingsHeadingRef} tabIndex={-1}>非表示の管理</h2></div>
           <div className="device-note panel"><h3>このブラウザだけの設定です</h3><p>BOOTH公式の非表示リストとは別です。端末・ブラウザ間では自動同期されず、ブラウザのデータ消去などで失われることがあります。</p><p>PC・iPhone・iPad間の移行には、共有URLまたはJSONファイルが使えます。バックアップとして保管する場合は、JSONファイルを書き出してください。</p></div>
           <RemovedEntries title="非表示のショップ" entries={hidden.list.shops} disabled={hidden.blocked} onRestore={restore} />
-          <SharePanel list={hidden.list} onPreview={previewShare} />
-          <section className="panel transfer"><h3>バックアップ・端末間の移行</h3><p>非表示にしたショップをファイルに保存して、バックアップや別の端末への移行に使えます。</p>
-            <div className="actions"><button className="primary" onClick={() => download(JSON.stringify(hidden.list, null, 2), 'booth-quiz-filter-hidden-v1.json')}>JSONを書き出す</button><label className={`file-button ${hidden.blocked ? 'disabled' : ''}`}>JSONを選んで取り込む<input type="file" accept="application/json,.json" disabled={hidden.blocked} onChange={(event) => { void readImport(event); }} /></label></div>
-            <p className="muted">ファイル容量は2MBまで。選んだだけでは既存設定を変更しません。</p>
-            {importBusy && <p role="status">ファイルを確認しています…</p>}{importError && <p className="error-text" role="alert">{importError} 既存設定は変更していません。</p>}
-            {incoming && preview && <div className="import-preview"><h4 ref={previewHeadingRef} tabIndex={-1}>取り込む内容を確認</h4><p>取り込むショップ：{incoming.shops.length}件</p><fieldset><legend>既存リストの扱い</legend><label><input type="radio" name="import-mode" checked={importMode === 'merge'} onChange={() => { setImportMode('merge'); setReplaceConfirmed(false); }} />追加する（既存設定を残す）</label><label><input type="radio" name="import-mode" checked={importMode === 'replace'} onChange={() => { setImportMode('replace'); setReplaceConfirmed(false); }} />置き換える</label></fieldset>
+          <section className="panel transfer-panel" aria-label="移行・共有">
+            <div className="transfer-tabs" role="tablist" aria-label="移行・共有の方法">
+              {(['url', 'json'] as const).map((tab) => <button key={tab} type="button" role="tab" id={`transfer-tab-${tab}`} aria-controls={`transfer-panel-${tab}`} aria-selected={transferTab === tab} tabIndex={transferTab === tab ? 0 : -1} onClick={() => setTransferTab(tab)} onKeyDown={transferTabKeyDown}>{tab === 'url' ? 'URLで移行・共有' : 'JSONで移行・共有'}</button>)}
+            </div>
+            <div id="transfer-panel-url" className="transfer-tab-panel" role="tabpanel" aria-labelledby="transfer-tab-url" hidden={transferTab !== 'url'}>
+              <SharePanel list={hidden.list} onPreview={previewShare} />
+            </div>
+            <div id="transfer-panel-json" className="transfer-tab-panel" role="tabpanel" aria-labelledby="transfer-tab-json" hidden={transferTab !== 'json'}>
+              <h3>JSONで移行・共有</h3><p>非表示にしたショップをファイルに保存して、バックアップや別の端末への移行に使えます。</p>
+              <div className="actions"><button className="primary" onClick={() => download(JSON.stringify(hidden.list, null, 2), 'booth-quiz-filter-hidden-v1.json')}>JSONを書き出す</button><label className={`file-button ${hidden.blocked ? 'disabled' : ''}`}>JSONを選んで取り込む<input type="file" accept="application/json,.json" disabled={hidden.blocked} onChange={(event) => { void readImport(event); }} /></label></div>
+              <p className="muted">ファイル容量は2MBまで。選んだだけでは既存設定を変更しません。</p>
+              {importBusy && <p role="status">ファイルを確認しています…</p>}{importError && <p className="error-text" role="alert">{importError} 既存設定は変更していません。</p>}
+            </div>
+            {incoming && preview && <div className="import-preview" role="region" aria-labelledby="import-preview-title"><h4 id="import-preview-title" ref={previewHeadingRef} tabIndex={-1}>取り込む内容を確認</h4><p>{incomingSource}から読み込んだリストです。</p>{incomingExpiresAt && <p>共有URLの有効期限：{new Date(incomingExpiresAt).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })} JST</p>}<p>取り込むショップ：{incoming.shops.length}件</p><fieldset><legend>既存リストの扱い</legend><label><input type="radio" name="import-mode" checked={importMode === 'merge'} onChange={() => { setImportMode('merge'); setReplaceConfirmed(false); }} />追加する（既存設定を残す）</label><label><input type="radio" name="import-mode" checked={importMode === 'replace'} onChange={() => { setImportMode('replace'); setReplaceConfirmed(false); }} />置き換える</label></fieldset>
               {importMode === 'merge' ? <p>新しく追加：ショップ{addedShops}件。登録済みのショップは追加しません。</p> : <p className="error-text">現在のリストから外れるショップ：{removedShops}件。</p>}
               <p><strong>適用後：ショップ{preview.shops.length}件</strong></p>
               <details><summary>名前とIDを確認する</summary><ul className="preview-list">{incoming.shops.map((entry) => <li key={`shop-${entry.id}`}>ショップ：{entry.name} <small>({entry.id})</small></li>)}</ul></details>
