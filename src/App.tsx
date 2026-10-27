@@ -13,7 +13,7 @@ import { loadSharedList, SHARE_ID_PATTERN } from './lib/sharing.ts';
 import { sortProducts } from './lib/presentation.ts';
 import type { SortOrder } from './lib/presentation.ts';
 
-const PAGE_SIZE = 12;
+const PAGE_SIZE = 60;
 
 function download(text: string, filename: string) {
   const url = URL.createObjectURL(new Blob([text], { type: 'application/json;charset=utf-8' }));
