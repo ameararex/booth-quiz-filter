@@ -5,6 +5,7 @@
 ## 現在の作業
 
 - Gitをmainで初期化し、originに https://github.com/ameararex/booth-quiz-filter.git を登録済み。リモートは初期化時点で空。
+- 初回コミット `bd4cff3` をGitHubの `main` にpush済み。
 - React + TypeScript + Viteによる架空データの試作品を実装済み。
 - 検索、商品/ショップ非表示、解除、localStorage保存、JSON移行、読み込み/失敗表示を対象にする。
 - 実データ収集、Hono、D1、Cloudflareへの公開は今回の初期作業では実装しない。
@@ -31,6 +32,7 @@
 
 - 現時点で必須の操作はありません。
 - 試作品完成後、サンプルを使った検索・非表示・JSON移行の操作感を確認してください。
+- 現在のローカルプレビューは http://127.0.0.1:4174/ です。停止後は `npm run dev` で起動できます。
 - iPhone/iPadの実機確認は別途必要です。端末間はJSONの書き出し・取り込みで移行し、自動同期されません。
 - 公開前にCloudflareの利用アカウント、BOOTHデータの取得条件、掲載停止の連絡先を決めます。
 
