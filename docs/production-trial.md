@@ -33,7 +33,7 @@ DB IDはActions内でwrangler.jsoncに設定するので、PCでのファイル�
 
 ## 初回に実行するワークフロー
 
-コードをGitHubのmainへ反映した後、Actions → Que-Fil initial deploy → Run workflowでmainを選ぶ。
+コードをGitHubのmainへ反映した後、Actions → Que-Fil initial deploy → Run workflowでmainを選ぶ。full_after_probeは初期値true。3ページ取得と初回デプロイに成功したら、同じ実行で全件取得・検証・再デプロイへ進む。全件取得に失敗した場合も先に公開した部分データは維持する。
 
 処理順：依存導入 → D1 ID反映 → テスト・ビルド → 人気順3ページ取得 → 配信用JSON生成・再ビルド → D1初期テーブル作成 → que-fil.ameararex.comへデプロイ。
 
@@ -47,9 +47,9 @@ Custom DomainはCloudflareにDNSレコード・証明書を管理させる。対
 
 HTTPS・画像・検索・5種類の並び順、ショップ非表示・解除・保持、共有リンク発行/取り込み/削除を確認。人気順が180件程度に増え、取得範囲と最終更新日時が更新されていることも確認する。localStorageはlocalhostとは別で、必要ならJSONで設定を移す。
 
-## 続いて全件取得を試す
+## 全件取得の再実行・以後の更新
 
-初回サイトの動作確認後、GitHubのVariablesに次を登録する。
+初回Actionsでは3ページ成功後の全件取得まで実行する。以後の更新や全件取得の再実行には、GitHubのVariablesに次を登録する。
 
 | 名前 | 内容 |
 | --- | --- |
