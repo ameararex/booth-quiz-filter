@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "mode": "sample",
+  "sourceUrl": null,
+  "fetchedAt": null,
+  "coverage": "架空の8商品。BOOTHから取得した情報ではありません。",
+  "orderLabel": "サンプルの表示順",
+  "products": [
+    { "id": "sample-item-001", "name": "春のクイズ大会 問題と記録", "shopId": "sample-shop-a", "shopName": "ことばのクイズ工房（架空）", "priceLabel": "¥800", "url": null },
+    { "id": "sample-item-002", "name": "早押しクイズ はじめの300問", "shopId": "sample-shop-b", "shopName": "青空クイズ研究所（架空）", "priceLabel": "¥500", "url": null },
+    { "id": "sample-item-003", "name": "週末のパズルノート", "shopId": "sample-shop-c", "shopName": "ひらめき文庫（架空）", "priceLabel": "¥300〜", "url": null },
+    { "id": "sample-item-004", "name": "学生オープン 大会記録集", "shopId": "sample-shop-d", "shopName": "架空大会実行委員会", "priceLabel": "¥1,000", "url": null },
+    { "id": "sample-item-005", "name": "日々のクイズ100問 お試し版", "shopId": "sample-shop-a", "shopName": "ことばのクイズ工房（架空）", "priceLabel": "無料", "url": null },
+    { "id": "sample-item-006", "name": "まちがい探しの小さな本", "shopId": "sample-shop-c", "shopName": "ひらめき文庫（架空）", "priceLabel": "¥400", "url": null },
+    { "id": "sample-item-007", "name": "テーマ別・文学クイズ集", "shopId": "sample-shop-b", "shopName": "青空クイズ研究所（架空）", "priceLabel": "価格未確認", "url": null },
+    { "id": "sample-item-008", "name": "夏のペーパークイズ 記録集", "shopId": "sample-shop-e", "shopName": "クイズの庭（架空）", "priceLabel": "¥600", "url": null }
+  ]
+}
