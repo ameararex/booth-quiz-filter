@@ -48,6 +48,13 @@ input[type="search"] { min-width: 0; flex: 1; border: 1px solid #99b8d8; border-
 #message:not(:empty) { margin: 0 0 16px; }
 .products { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); column-gap: 24px; row-gap: 35px; overflow-anchor: none; }
 article { min-width: 0; display: flex; flex-direction: column; }
+.products article { transition: opacity 180ms ease-out, transform 180ms ease-out; }
+.products article.is-hiding { opacity: 0; transform: translateY(4px) scale(.985); pointer-events: none; }
+.toast-region { position: fixed; z-index: 100; bottom: calc(28px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); width: max-content; max-width: calc(100% - 32px); pointer-events: none; }
+.toast { padding: 12px 20px; border: 1px solid #86b8e1; border-radius: 4px; background: #fff; color: #172b42; box-shadow: 0 4px 20px #173e6426; font-size: 13px; overflow-wrap: anywhere; animation: toast-in 160ms ease-out; }
+.toast span { display: block; color: #8a3f14; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .products article { transition: none; } .products article.is-hiding { transform: none; } .toast { animation: none; } }
 .thumbnail { position: relative; background: #fff; aspect-ratio: 1; overflow: hidden; display: grid; place-items: center; border: 1px solid #e5edf5; }
 .thumbnail img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .thumbnail small { position: absolute; bottom: 5px; right: 6px; background: #ffffffe8; color: #666; padding: 1px 5px; font-size: 9px; }

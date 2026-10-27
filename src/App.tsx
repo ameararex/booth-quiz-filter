@@ -50,6 +50,8 @@ export function App() {
   const [display, setDisplay] = useState<'grid' | 'list'>('grid');
   const [sortOrder, setSortOrder] = useState<SortOrder>('new');
   const [notice, setNotice] = useState('');
+  const [pendingHide, setPendingHide] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ id: number; message: string } | null>(null);
   const [incoming, setIncoming] = useState<HiddenList | null>(null);
   const [importError, setImportError] = useState('');
   const [importBusy, setImportBusy] = useState(false);
@@ -63,11 +65,27 @@ export function App() {
 
   useLayoutEffect(() => {
     const position = scrollAfterHide.current;
-    if (position) {
+    if (position && !pendingHide) {
       window.scrollTo({ left: position.x, top: position.y, behavior: 'instant' });
       scrollAfterHide.current = null;
     }
-  }, [hidden.list]);
+  }, [hidden.list, pendingHide]);
+
+  useEffect(() => {
+    if (!pendingHide) return;
+    const delay = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 180;
+    const timer = window.setTimeout(() => {
+      scrollAfterHide.current = { x: window.scrollX, y: window.scrollY };
+      setPendingHide(null);
+    }, delay);
+    return () => window.clearTimeout(timer);
+  }, [pendingHide]);
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = window.setTimeout(() => setToast(null), 4000);
+    return () => window.clearTimeout(timer);
+  }, [toast]);
 
   function previewShare(list: HiddenList, expiresAt: string) {
     setIncoming(list); setImportMode('merge'); setReplaceConfirmed(false); setImportError('');
@@ -100,7 +118,8 @@ export function App() {
 
   const hiddenShops = new Set(hidden.list.shops.map((entry) => entry.id));
   const scopedProducts = catalog ? sortProducts(catalog.products, catalog.mode, sortOrder, catalog.sorts) : [];
-  const available = scopedProducts.filter((product) => !hiddenShops.has(product.shopId));
+  // 保存は即時に行い、消えるアニメーションの間だけ対象ショップの商品を残す。
+  const available = scopedProducts.filter((product) => !hiddenShops.has(product.shopId) || product.shopId === pendingHide);
   const results = available.filter((product) => matchesSearch(product.name, product.shopName, query));
   const activeSnapshot = catalog?.sorts?.new;
   const pages = Math.max(1, Math.ceil(results.length / PAGE_SIZE));
@@ -112,12 +131,14 @@ export function App() {
 
   function hide(product: Product) {
     const entry = { id: product.shopId, name: product.shopName };
-    if (hidden.blocked || hiddenShops.has(entry.id)) return;
+    if (hidden.blocked || pendingHide || hiddenShops.has(entry.id)) return;
+    setPendingHide(entry.id);
     scrollAfterHide.current = { x: window.scrollX, y: window.scrollY };
     if (hidden.update({ ...hidden.list, shops: [...hidden.list.shops, entry] })) {
-      setNotice(`「${entry.name}」を非表示にしました。非表示の管理から解除できます。`);
+      setNotice('');
+      setToast({ id: Date.now(), message: `「${entry.name}」を非表示にしました` });
       searchRef.current?.focus({ preventScroll: true });
-    } else scrollAfterHide.current = null;
+    } else { scrollAfterHide.current = null; setPendingHide(null); }
   }
 
   function restore(id: string) {
@@ -163,7 +184,7 @@ export function App() {
     </div></header>
     <div className="catalog-notice"><div className="shell">掲載情報は取得時点のものです。価格・販売状況はBOOTHで最終確認してください。</div></div>
       <main className="shell" id="main" tabIndex={-1}>
-        {hidden.status && <div className={`save-status ${hidden.saved ? '' : 'warning'}`} role="status">{hidden.status}</div>}
+        {hidden.status && (view === 'settings' || !hidden.saved) && <div className={`save-status ${hidden.saved ? '' : 'warning'}`} role="status">{hidden.status}</div>}
         {hidden.blocked && <div className="panel recovery" role="alert">
           <h2>保存済み設定を保護しています</h2><p>元のデータを自動で上書きしません。必要なら元データを書き出した後、保存領域を初期化してください。</p>
           <div className="actions">{hidden.raw !== null && <button onClick={() => download(hidden.raw!, 'booth-quiz-filter-recovery.json')}>元データを書き出す</button>}
@@ -180,7 +201,7 @@ export function App() {
             <div className="toolbar"><p className="result-summary" role="status"><strong>{results.length}</strong>件<span className="hidden-summary">非表示 {scopedProducts.length - available.length}件</span></p><div className="display-controls"><select aria-label="並び順" value={catalog.mode === 'sample' || catalog.sorts ? sortOrder : 'source'} onChange={(event) => { setSortOrder(event.target.value as SortOrder); setPage(1); }}>{catalog.mode === 'sample' || catalog.sorts ? Object.entries(SORT_OPTIONS).map(([key, label]) => <option key={key} value={key} disabled={key === 'wish_lists' ? !catalog.products.some((product) => product.likes != null) : key.startsWith('price_') ? !catalog.products.some((product) => product.priceYen != null) : false}>{label}{catalog.mode === 'sample' ? '（仮）' : ''}</option>) : <option value="source">{catalog.orderLabel}</option>}</select><ViewToggle value={display} onChange={setDisplay} /></div></div>
             {activeSnapshot && <p className="order-note">{activeSnapshot.hasMore ? `BOOTHで取得した${activeSnapshot.label}の先頭${activeSnapshot.ids.length}件が対象です。検索はこの範囲内のみです。続きの商品は未取得です。` : `${activeSnapshot.label}で最後のページまで取得した${activeSnapshot.ids.length}件が対象です。取得中の変更は反映が前後する場合があります。`} <a href={activeSnapshot.url} target="_blank" rel="noopener noreferrer">BOOTHで確認 ↗</a></p>}
             {sortOrder !== 'new' && sortOrder !== 'source' && <p className="sort-help">価格は表示の最低額で比較します。同じ価格・スキ数の商品は新着順、不明な値は末尾に表示します。</p>}
-            {results.length === 0 ? <div className="empty panel"><h3>表示できる商品がありません</h3><p>検索語を変えるか、非表示の設定を確認してください。</p><div className="actions"><button onClick={() => { setQuery(''); setPage(1); }}>検索を解除</button><button onClick={() => setView('settings')}>非表示を確認</button></div></div> : <div className={`products ${display === 'list' ? 'list' : ''}`}>{visible.map((product) => <ProductCard key={product.id} product={product} mode={catalog.mode} disabled={hidden.blocked} onHide={() => hide(product)} />)}</div>}
+            {results.length === 0 ? <div className="empty panel"><h3>表示できる商品がありません</h3><p>検索語を変えるか、非表示の設定を確認してください。</p><div className="actions"><button onClick={() => { setQuery(''); setPage(1); }}>検索を解除</button><button onClick={() => setView('settings')}>非表示を確認</button></div></div> : <div className={`products ${display === 'list' ? 'list' : ''}`}>{visible.map((product) => <ProductCard key={product.id} product={product} mode={catalog.mode} hiding={pendingHide === product.shopId} disabled={hidden.blocked || Boolean(pendingHide)} onHide={() => hide(product)} />)}</div>}
             {pages > 1 && <nav className="pagination" aria-label="商品一覧のページ"><button disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)}>前へ</button><span>{currentPage} / {pages}</span><button disabled={currentPage >= pages} onClick={() => setPage(currentPage + 1)}>次へ</button></nav>}
           </>}
         </> : <>
@@ -211,5 +232,6 @@ export function App() {
         <p>本サービスは、予告なく内容の変更・提供の中断・終了を行うことがあります。</p>
       </details>
     </footer>
+    <div className="toast-region" role="status" aria-live="polite" aria-atomic="true">{toast && <div className="toast" key={toast.id}>{toast.message}{!hidden.saved && <span>保存できませんでした。JSONを書き出して保管してください。</span>}</div>}</div>
   </>;
 }

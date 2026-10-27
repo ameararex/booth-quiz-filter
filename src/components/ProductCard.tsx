@@ -2,8 +2,8 @@ import { useState } from 'react';
 import type { Catalog, Product } from '../lib/catalog.ts';
 import { thumbnailFor } from '../lib/presentation.ts';
 
-export function ProductCard({ product, mode, disabled, onHide }: {
-  product: Product; mode: Catalog['mode']; disabled: boolean; onHide: () => void;
+export function ProductCard({ product, mode, disabled, hiding = false, onHide }: {
+  product: Product; mode: Catalog['mode']; disabled: boolean; hiding?: boolean; onHide: () => void;
 }) {
   const [imageFailed, setImageFailed] = useState(false);
   const thumbnail = thumbnailFor(product, mode);
@@ -12,7 +12,7 @@ export function ProductCard({ product, mode, disabled, onHide }: {
     {mode === 'sample' && <small>仮の表紙</small>}
   </>;
 
-  return <article>
+  return <article className={hiding ? 'is-hiding' : undefined}>
     {product.url ? <a className="thumbnail" href={product.url} target="_blank" rel="noopener noreferrer" aria-label={`${product.name}をBOOTHで確認`}>{image}</a> : <div className="thumbnail">{image}</div>}
     <div className="card-body">
       <div className="item-title">
