@@ -59,6 +59,14 @@ HTTPS・画像・検索・4種類の並び順、ショップ非表示・解除�
 
 Actions → Que-Fil collection → Run workflowでmode=fullを選ぶ。公開中データを比較基準にし、全件収集・検証・ビルドが成功した場合だけ公開を更新する。取得中は現在のサイトが使える。4,447件・60件/ページなら約75ページ、HTMLとスキ数で約150通信、待ち時間だけで約12分半。通信・ビルド等が加算され、タグ全件の実測は未完了。
 
+## 商品データを更新せず画面だけデプロイ
+
+Actions → **Que-Fil site deploy** → Run workflowでmainを選んで実行する。追加入力は不要。既存のCLOUDFLARE_API_TOKEN・CLOUDFLARE_ACCOUNT_ID（Secrets）とSHARES_DATABASE_ID（Variable）を利用する。CATALOG_SITE_URLは任意で、未設定なら https://que-fil.ameararex.com を使う。
+
+本番のmanifestと商品JSONを取得・検証 → テスト・ビルド → 未適用のD1マイグレーション → デプロイの順。BOOTHの収集は呼ばず、商品・価格・スキ数・取得日時・取得範囲を引き継ぐ。部分取得でも全件取得でも利用でき、全件用validate:catalogは実行しない。取得・検証失敗時にリポジトリの古いデータへフォールバックしない。
+
+収集ジョブと同じ同時実行グループを使用し、重複実行を直列化する。実行中の収集はキャンセルしない。コード反映だけでは自動起動しない。これは既存サイトの更新用で、初回公開にはinitial deployを使う。
+
 ## 最後に12時間更新
 
 データ取得から検索まで確認できてから、Cloudflare Cron → GitHub workflow_dispatchの起動を有効化する。これは初回テストとは別の最後の作業。[automation.md](automation.md)を参照。

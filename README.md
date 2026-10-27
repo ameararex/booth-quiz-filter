@@ -45,3 +45,5 @@ npm run deploy:check は公開しないドライラン、npm run deploy は公�
 [作業状況](docs/TODO.md)・[構成](docs/architecture.md)・[共有の無料枠と利用例](docs/sharing-budget.md)・[画像とデザイン](docs/sharing-and-thumbnails.md)
 
 自動更新はCloudflare Cron → GitHub Actions方式を採用しました。コードは追加済みですが、定期起動は無効のままです。[設定手順](docs/automation.md)を参照してください。
+
+商品データを更新せず画面だけ公開する場合は、Actionsの **Que-Fil site deploy** を手動実行してください。本番で配信中のJSONと取得日時を引き継ぎ、BOOTHへは収集に行きません。[手順](docs/production-trial.md)
