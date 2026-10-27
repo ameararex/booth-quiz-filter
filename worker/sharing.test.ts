@@ -47,6 +47,23 @@ test('200ショップの共有・7日期限を検証し、管理用トークン�
   } finally { db.close(); }
 });
 
+test('長い名前400ショップの64KB超のリストも128KB以内なら共有できる', async () => {
+  const { db, request } = setup();
+  try {
+    const shops = Array.from({ length: 400 }, (_, i) => ({ id: `shop-${i}`.padEnd(20, 'x'), name: 'あ'.repeat(80) }));
+    const input = { version: 1, shops };
+    const bytes = new TextEncoder().encode(JSON.stringify(input)).byteLength;
+    assert.ok(bytes > 64000 && bytes < 128000);
+    const created = await request('', 'POST', input);
+    assert.equal(created.status, 201);
+    const { id } = await created.json() as { id: string };
+    const shared = await (await request(`/${id}`)).json() as { list: { shops: unknown[] } };
+    assert.deepEqual(shared.list.shops, shops);
+    const tooLarge = { version: 1, shops: shops.map((shop) => ({ ...shop, name: 'あ'.repeat(100) })) };
+    assert.equal((await request('', 'POST', tooLarge)).status, 413);
+  } finally { db.close(); }
+});
+
 test('失効したリンクは削除前でも取得不可。日次500件と容量制限を検証する', async () => {
   const { db, request } = setup();
   try {
@@ -57,7 +74,7 @@ test('失効したリンクは削除前でも取得不可。日次500件と容�
     db.prepare('UPDATE share_limits SET created_count = 499').run();
     assert.equal((await request('', 'POST', body)).status, 201);
     assert.equal((await request('', 'POST', body)).status, 429);
-    assert.equal((await request('', 'POST', { version: 1, shops: [], padding: 'x'.repeat(64000) })).status, 413);
+    assert.equal((await request('', 'POST', { version: 1, shops: [], padding: 'x'.repeat(128000) })).status, 413);
     assert.equal((await request('', 'POST', { version: 99 })).status, 400);
     const crossOrigin = await app.request('https://example.test/api/shares', { method: 'POST', headers: { Origin: 'https://other.test' } }, { SHARES_DB: {} as D1Database });
     assert.equal(crossOrigin.status, 403);

@@ -179,10 +179,10 @@ export function App() {
   return <>
     <a className="skip-link" href="#main">本文へ移動</a>
     <header className="site-header"><div className="shell header-inner">
-      <h1><a className="site-title" href="/">Que-Fil</a><span>キューフィル · クイズプレイヤーのためのBOOTH検索サービス</span></h1>
+      <h1><a className="site-title" href="/">Que-Fil</a><span className="site-subtitle">キューフィル<span className="subtitle-separator"> </span><br className="mobile-break" />クイズプレイヤーのためのBOOTH検索サービス</span></h1>
       <nav aria-label="メニュー"><button aria-pressed={view === 'settings'} onClick={() => { setView(view === 'settings' ? 'catalog' : 'settings'); setNotice(''); }}>{view === 'settings' ? '商品一覧に戻る' : <>非表示リスト <span>{hidden.list.shops.length}</span></>}</button></nav>
     </div></header>
-    <div className="catalog-notice"><div className="shell">掲載情報は取得時点のものです。価格・販売状況はBOOTHで最終確認してください。</div></div>
+    <div className="catalog-notice"><div className="shell">掲載情報は取得時点のものです。<br className="mobile-break" />価格・販売状況はBOOTHで最終確認してください。</div></div>
       <main className="shell" id="main" tabIndex={-1}>
         {hidden.status && (view === 'settings' || !hidden.saved) && <div className={`save-status ${hidden.saved ? '' : 'warning'}`} role="status">{hidden.status}</div>}
         {hidden.blocked && <div className="panel recovery" role="alert">

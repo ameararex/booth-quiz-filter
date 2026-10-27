@@ -59,7 +59,7 @@ export function SharePanel({ list, onPreview }: {
     <h3>URLで移行・共有</h3>
     <p>非表示ショップのリストをサーバーに保存し、共有URLを作ります。URLを知っている人はリストを取り込めます。有効期限は7日間です。</p>
     <button className="primary" disabled={busy || !list.shops.length} onClick={() => { void createShare(); }}>共有リンクを作る</button>
-    <p className="muted">1リンク64KBまで。</p>
+    <p className="muted">1リンク128KBまで。</p>
     {share && <div className="share-output"><label htmlFor="share-output">共有URL</label><div className="share-output-row"><input ref={outputRef} id="share-output" readOnly value={shareUrl} onFocus={(event) => event.target.select()} /><button type="button" disabled={copying} onClick={() => { void copyUrl(); }}>URLをコピー</button></div><p className="copy-status" role="status">{copyStatus}</p><p>有効期限：{new Date(share.expiresAt).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })} JST</p></div>}
     <form className="share-import" onSubmit={(event) => { event.preventDefault(); void previewUrl(); }}><label htmlFor="share-import-url">共有URLから取り込む</label><div className="search-line"><input id="share-import-url" type="url" value={urlText} onChange={(event) => setUrlText(event.target.value)} placeholder="https://…/?share=…" required /><button disabled={busy || !urlText.trim()} type="submit">内容を確認</button></div></form>
     {status && <p role="status">{status}</p>}
