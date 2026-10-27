@@ -54,7 +54,7 @@ export function parseCatalog(value: unknown): Catalog {
     sorts = {};
     for (const [key, entry] of Object.entries(value.sorts)) {
       if (!(key in SORT_OPTIONS) || !isRecord(entry) || entry.label !== SORT_OPTIONS[key as BoothSort] || !boothUrl(entry.url) ||
-        new URL(entry.url).searchParams.get('sort') !== key || typeof entry.fetchedAt !== 'string' || !Number.isFinite(Date.parse(entry.fetchedAt)) ||
+        (new URL(entry.url).searchParams.get('sort') ?? 'popularity') !== key || typeof entry.fetchedAt !== 'string' || !Number.isFinite(Date.parse(entry.fetchedAt)) ||
         !Number.isInteger(entry.pageCount) || Number(entry.pageCount) < 1 || typeof entry.hasMore !== 'boolean' ||
         (entry.categoryTotal !== null && (!Number.isInteger(entry.categoryTotal) || Number(entry.categoryTotal) < 0)) ||
         !Array.isArray(entry.ids) || !entry.ids.length || entry.ids.some((id) => typeof id !== 'string' || !seen.has(id)) || new Set(entry.ids).size !== entry.ids.length) {

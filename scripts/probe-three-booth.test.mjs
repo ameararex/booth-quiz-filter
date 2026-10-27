@@ -19,7 +19,7 @@ test('3ページ検証の公開オプションは新規取得順だけ更新し�
     for (let page = 1; page <= 3; page++) {
       const id = `9999900${page}`;
       const html = `<h1>クイズ</h1><li class="item-card" data-product-id="${id}" data-product-brand="test-shop"><div class="item-card__title"><a href="https://booth.pm/ja/items/${id}">テスト問題集</a></div><a class="item-card__shop-name-anchor" href="https://test-shop.booth.pm/"><span class="item-card__shop-name">店</span></a><div class="price">¥ 100</div></li><a rel="next" href="?page=${page + 1}">次</a>`;
-      await writeFile(join(temp, `.wrangler/booth-cache/${page === 1 ? 'popularity' : `popularity.${page}`}.json`), JSON.stringify({ html, fetchedAt: new Date().toISOString(), url: `${CATEGORY_URL}?${page === 1 ? 'sort=popularity' : `page=${page}`}` }));
+      await writeFile(join(temp, `.wrangler/booth-cache/${page === 1 ? 'popularity' : `popularity.${page}`}.json`), JSON.stringify({ html, fetchedAt: new Date().toISOString(), url: page === 1 ? CATEGORY_URL : `${CATEGORY_URL}?page=${page}` }));
     }
     const child = spawnSync(process.execPath, ['--import', pathToFileURL(join(temp, 'no-network.mjs')).href, resolve('scripts/probe-three-booth.mjs'), '--publish'], { cwd: temp, encoding: 'utf8', windowsHide: true });
     assert.equal(child.status, 0, child.stderr);

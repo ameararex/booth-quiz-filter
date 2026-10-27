@@ -4,7 +4,7 @@ export async function collectSortPages({ key, label, readPage, onPage = () => {}
   const products = new Map();
   const signatures = new Set();
   let url = new URL(CATEGORY_URL);
-  url.searchParams.set('sort', key);
+  if (key !== 'popularity') url.searchParams.set('sort', key);
   for (let page = 1; page <= maxPages; page++) {
     const cache = await readPage(url.href, page);
     const parsed = parseBoothPage(cache.html);
@@ -13,7 +13,7 @@ export async function collectSortPages({ key, label, readPage, onPage = () => {}
     signatures.add(signature);
     for (const product of parsed.products) if (!products.has(product.id)) products.set(product.id, product);
     if (products.size > 5000) throw new Error('管理対象5,000商品の検証予算を超えたため停止します。');
-    const snapshot = { label, url: `${CATEGORY_URL}?sort=${key}`, fetchedAt: cache.fetchedAt, pageCount: page, hasMore: parsed.hasMore, categoryTotal: parsed.categoryTotal, ids: [...products.keys()] };
+    const snapshot = { label, url: key === 'popularity' ? CATEGORY_URL : `${CATEGORY_URL}?sort=${key}`, fetchedAt: cache.fetchedAt, pageCount: page, hasMore: parsed.hasMore, categoryTotal: parsed.categoryTotal, ids: [...products.keys()] };
     await onPage(snapshot);
     if (!parsed.hasMore) return { snapshot, products: [...products.values()] };
     const next = new URL(parsed.nextUrl);

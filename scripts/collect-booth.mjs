@@ -18,7 +18,7 @@ async function main() {
   const all = new Map();
   let requestCount = 0;
   for (const [key, label] of Object.entries(SORTS)) {
-    const sourceUrl = `${CATEGORY_URL}?sort=${key}`;
+    const sourceUrl = key === 'popularity' ? CATEGORY_URL : `${CATEGORY_URL}?sort=${key}`;
     const cachePath = resolve(cacheDir, `${key}.json`);
     let cache;
     try {

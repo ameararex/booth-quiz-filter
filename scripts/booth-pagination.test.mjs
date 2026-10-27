@@ -34,6 +34,7 @@ test('人気順の次ページURLへsortを追加せず、他の順序のsort欠
   await collectSortPages({ key: 'popularity', label: '人気順', readPage: async (url, page) => {
     urls.push(url); return cache(html(String(page), page === 1 ? '?page=2' : ''));
   } });
+  assert.equal(new URL(urls[0]).searchParams.has('sort'), false);
   assert.equal(new URL(urls[1]).searchParams.has('sort'), false);
   await assert.rejects(collectSortPages({ key: 'new', label: '新着順', readPage: async () => cache(html('1', '?page=2')) }), /不整合/);
 });
