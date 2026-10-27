@@ -1,0 +1,61 @@
+name: Que-Fil collection
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'probe: 人気順3ページのみ / full: 全5順序の全ページ'
+        type: choice
+        options: [probe, full]
+        default: probe
+        required: true
+
+permissions:
+  contents: read
+concurrency:
+  group: que-fil-catalog-update
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    env:
+      WRANGLER_SEND_METRICS: 'false'
+      BOOTH_CACHE_MAX_AGE_HOURS: '6'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.13.0'
+      - run: npm ci
+      - name: Configure deployment database
+        if: inputs.mode == 'full' && vars.ENABLE_CATALOG_DEPLOY == 'true'
+        env:
+          SHARES_DATABASE_ID: ${{ vars.SHARES_DATABASE_ID }}
+        run: node scripts/configure-d1.mjs
+      - run: npm run check
+      - name: Require explicit full collection enablement
+        if: inputs.mode == 'full'
+        env:
+          ALLOW_FULL_COLLECTION: ${{ vars.ALLOW_FULL_COLLECTION }}
+        run: test "$ALLOW_FULL_COLLECTION" = true
+      - name: Test first three pages
+        if: inputs.mode == 'probe'
+        run: npm run collect:booth:three
+      - name: Load currently published baseline
+        if: inputs.mode == 'full' && vars.ENABLE_CATALOG_DEPLOY == 'true'
+        env:
+          CATALOG_SITE_URL: ${{ vars.CATALOG_SITE_URL }}
+        run: node scripts/prepare-baseline.mjs
+      - name: Collect all pages
+        if: inputs.mode == 'full'
+        run: npm run collect:booth
+      - name: Validate and build new catalog
+        if: inputs.mode == 'full'
+        run: npm run validate:catalog && npm run build
+      - name: Deploy successful catalog
+        if: inputs.mode == 'full' && vars.ENABLE_CATALOG_DEPLOY == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler deploy

@@ -6,7 +6,7 @@ export function useHiddenList() {
   const [initial] = useState(() => readStoredList(() => window.localStorage));
   const [list, setList] = useState(initial.list);
   const [blocked, setBlocked] = useState(Boolean(initial.error));
-  const [status, setStatus] = useState(initial.error || 'このブラウザに保存できます。');
+  const [status, setStatus] = useState(initial.error || '');
   const [saved, setSaved] = useState(!initial.error);
 
   function update(next: HiddenList): boolean {

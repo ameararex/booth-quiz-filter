@@ -1,6 +1,7 @@
 export const STORAGE_KEY = 'booth-quiz-filter:hidden:v1';
 export const MAX_IMPORT_BYTES = 2 * 1024 * 1024;
 export type HiddenEntry = { id: string; name: string };
+// itemsは旧形式との互換性のため保管・再出力するだけ。現在の絞り込みには使わない。
 export type HiddenList = { version: 1; items: HiddenEntry[]; shops: HiddenEntry[] };
 export type ImportMode = 'merge' | 'replace';
 export const emptyList = (): HiddenList => ({ version: 1, items: [], shops: [] });
@@ -35,12 +36,13 @@ export function parseList(text: string): HiddenList {
   }
   let value: unknown;
   try { value = JSON.parse(text); } catch { throw new Error('JSONとして読み込めませんでした。'); }
-  if (!isRecord(value) || value.version !== 1) throw new Error('対応している形式はversion: 1です。');
+  if (!isRecord(value) || value.version !== 1) throw new Error('対応していないファイル形式です。Que-Filから書き出したJSONファイルを選んでください。');
   return { version: 1, items: entries(value.items), shops: entries(value.shops) };
 }
 
 export function combineLists(current: HiddenList, incoming: HiddenList, mode: ImportMode): HiddenList {
-  if (mode === 'replace') return { version: 1, items: [...incoming.items], shops: [...incoming.shops] };
+  // 画面で置換する対象はショップのみ。表示しない互換データを意図せず失わないよう保管する。
+  if (mode === 'replace') return { version: 1, items: entries([...current.items, ...incoming.items]), shops: [...incoming.shops] };
   return {
     version: 1,
     items: entries([...current.items, ...incoming.items]),

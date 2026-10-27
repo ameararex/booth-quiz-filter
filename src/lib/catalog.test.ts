@@ -1,14 +1,25 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { boothUrl, parseCatalog } from './catalog.ts';
+import { boothUrl, parseCatalog, validThumbnail } from './catalog.ts';
 
-const sample = JSON.parse(readFileSync(new URL('../../public/data/catalog.sample.v1.json', import.meta.url), 'utf8').replace(/^\uFEFF/, '')) as unknown;
+const sample = JSON.parse(readFileSync(new URL('../../test-fixtures/catalog.sample.v1.json', import.meta.url), 'utf8').replace(/^\uFEFF/, '')) as unknown;
 
 test('BOOTHのHTTPS URLだけを許可する', () => {
   assert.equal(boothUrl('https://booth.pm/ja/items/123'), true);
   assert.equal(boothUrl('https://sample.booth.pm/items/123'), true);
   for (const url of ['javascript:alert(1)', 'https://booth.pm.evil.example/items/1', 'https://evil.example/booth.pm', 'http://booth.pm/items/1', 'https://user:pass@booth.pm/items/1', 'https://booth.pm:8080/items/1']) assert.equal(boothUrl(url), false);
+});
+
+test('画像URLと並び順の取得範囲・IDの整合性を検証する', () => {
+  assert.equal(validThumbnail('https://booth.pximg.net/c/300x300_a2_g5/sample.jpg'), true);
+  assert.equal(validThumbnail('https://evil.example/sample.jpg'), false);
+  const parsed = parseCatalog(sample);
+  const snapshot = { label: '新着順', url: 'https://booth.pm/ja/browse/quiz?sort=new', fetchedAt: '2026-10-27T00:00:00Z', pageCount: 1, hasMore: true, categoryTotal: 100, ids: [parsed.products[0].id] };
+  assert.equal(parseCatalog({ ...parsed, sorts: { new: snapshot } }).sorts?.new?.ids.length, 1);
+  assert.throws(() => parseCatalog({ ...parsed, sorts: { new: { ...snapshot, ids: ['missing'] } } }));
+  assert.throws(() => parseCatalog({ ...parsed, sorts: { new: { ...snapshot, ids: [parsed.products[0].id, parsed.products[0].id] } } }));
+  assert.throws(() => parseCatalog({ ...parsed, sorts: { new: { ...snapshot, url: 'https://booth.pm/?sort=price_asc' } } }));
 });
 
 test('架空データを正常に読み込み、取得日時・購入リンクは設けない', () => {

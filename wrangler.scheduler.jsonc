@@ -1,0 +1,10 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "que-fil-scheduler",
+  "main": "scheduler/index.ts",
+  "compatibility_date": "2026-10-27",
+  "workers_dev": false,
+  "preview_urls": false,
+  "triggers": { "crons": ["17 0,12 * * *"] },
+  "vars": { "SCHEDULER_ENABLED": "false", "COLLECTION_MODE": "probe" }
+}

@@ -17,8 +17,8 @@ test('追加は既存設定を保持し、重複するIDの既存名を保持す
   assert.equal(current.items.length, 1);
 });
 
-test('置換と空の取り込みの結果は追加と異なる', () => {
-  assert.deepEqual(combineLists(current, emptyList(), 'replace'), emptyList());
+test('置換はショップのみを置き換え、画面に出さない互換データを保護する', () => {
+  assert.deepEqual(combineLists(current, emptyList(), 'replace'), { ...emptyList(), items: current.items });
   assert.deepEqual(combineLists(current, emptyList(), 'merge'), current);
 });
 
