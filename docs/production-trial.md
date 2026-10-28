@@ -1,10 +1,12 @@
-# 本番環境での動作確認
+# 初期構築・本番デプロイ
+
+本番サイトは https://que-fil.ameararex.com/ で公開済み。この文書は新しい環境を用意する場合の初期構築手順を含む。既存サイトの画面更新にはQue-Fil site deploy、データ更新にはQue-Fil collection、定期起動設定の更新にはQue-Fil scheduler deployを使い、初回用ジョブを繰り返さない。
 
 ## 決定事項
 
 - 初回の収集・D1初期化・デプロイからGitHub Actionsを使う。PCのWranglerログインやPCからの公開は不要。
 - ドメインはque-fil.ameararex.com。DNSはCloudflare管理。URLはまだ告知しないが、第三者の閲覧は許容する。ログイン制限なし。
-- サイトのworkers.dev・プレビューURLは無効。独自ドメインの接続設定はコードへ追加済み。本番Actionsで動作確認中。最終的な公開成功は未確認。
+- サイトのworkers.dev・プレビューURLは無効。独自ドメインを使い、GitHub Actionsから公開する。
 - 初回は「クイズ」のキーワード検索の新着順3ページを取得し、価格数値・公開スキ数を保存したJSONへ反映して公開する。全件検索とは表示しない。
 
 ## ユーザーが管理画面で行う準備

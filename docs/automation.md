@@ -1,6 +1,6 @@
 # Que-Filの自動更新
 
-Cloudflare Cron → GitHub workflow_dispatch → 収集・検証 → Workers Static Assetsへ直接デプロイする。PCの常時稼働や生成JSONのコミットは不要。本番の4,447商品取得は確認済み。定期起動は未有効化。
+Cloudflare Cron → GitHub workflow_dispatch → 収集・検証 → Workers Static Assetsへ直接デプロイする。PCの常時稼働や生成JSONのコミットは不要。この文書は設定手順であり、現在の本番の有効・無効や更新成功を保証するものではない。稼働状況はCloudflareのCronログとGitHub Actions履歴、データの更新日時はサイトの最終更新で確認する。
 
 ## ファイルと初期状態
 
