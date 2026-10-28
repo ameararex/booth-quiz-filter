@@ -29,6 +29,12 @@ Cloudflare Cron → GitHub workflow_dispatch → 収集・検証 → Workers Sta
 
 標準ランナーを使う公開リポジトリを前提にする。トークン期限切れ前には新トークンを同じRepository Secretへ保存し、Que-Fil scheduler deployをenabled付きで再実行する。GitHub側のSecret更新だけではCloudflare側のトークンは置き換わらない。
 
+## 起動エラーを確認する
+
+`que-fil-scheduler` のObservabilityでCronのログを確認する。`Invalid redirect value ... error` は2026-10-28に修正したWorkers非対応のfetchオプションが原因。修正を反映するには **Que-Fil scheduler deploy** をenabled付きで実行する。再公開後に `accepted` ならGitHubが起動要求を受理、`skipped` なら実行中または直近5時間以内の起動による抑制、`disabled` なら起動無効。acceptedは収集・公開完了を意味しない。
+
+管理画面で一時追加したCronはActionsでの再デプロイにより設定ファイルの時刻へ戻る。毎時テストを続ける場合は再デプロイ後に追加し、確認後に除去する。ログ有効化前のエラー詳細は復元できない。
+
 ## 自動更新だけを止める
 
 Que-Fil scheduler deployをenabledのチェックを外して実行する。サイト公開や保存済み共有リンクは継続する。実行中の収集は別途Actionsでキャンセルする。Cron設定自体は残るが、起動用WorkerはGitHubへ通信しない。再開はenabled付きで同じワークフローを実行する。

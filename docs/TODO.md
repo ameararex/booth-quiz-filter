@@ -4,6 +4,7 @@
 
 ## 現在の状態（最新・2026-10-28）
 
+- 自動起動失敗の原因がユーザー提供の12時のログで確定。Workers非対応の `redirect: 'error'` により、GitHub通信の前にTypeErrorで停止していた。ユーザー承認後、scheduler内の2通信を `redirect: 'manual'` に修正。既存のHTTPステータス確認で3xxは停止し、追従・再試行はしない。40テスト・型チェック・ビルド・Wranglerドライラン成功。Miniflare/workerdで模擬GitHubのGET→POSTがacceptedとなり、302では転送先へ通信せず停止することも確認（実GitHub/BOOTHの収集起動なし）。ユーザー側は **Que-Fil scheduler deploy** をenabled付きで実行後、次回のログとActions起動を確認する。本番再デプロイは今回行っていない。再デプロイすると、画面で追加した毎時テストは通常の4/10/16/22時へ戻るため、毎時テスト継続時はその後に一時Cronを追加する。
 - メール非公開化：ユーザー指定の `196605264+ameararex@users.noreply.github.com` をこのリポジトリの今後のGitメールに設定し、既存27コミットのAuthor/Committer計54欄を置換。全コミットのtree・日時・メッセージ・順序・親子関係を維持したことを照合し、force-with-leaseでmainへ反映済み。GitHub APIでも27件全てのメール置換を確認。ただし旧コミットIDを直接指定するとGitHub上では旧メール入りのコミットを取得できたため、完全消去は未完了。Public化前に残存参照の扱いを判断する必要がある。GitHub Supportによる除去の可否確認などは別途必要。Public化や既存Actions履歴の削除は行っていない。旧履歴のbundleとID対応表はローカルの `.wrangler/privacy-backup/`（Git管理外）に保存。デプロイし直す必要はない。
 - Public化前の情報点検：現在の追跡ファイル、全27コミットの履歴（テキスト241版・バイナリ3版）、GitHub Actions全15実行の保存ログ30ファイルを確認。実トークン・秘密鍵のパターンは検出なし。検出した認証付きURLは不正URLを拒否するための架空のuser:passテスト。認証ファイル・DB・個人非表示リストの追跡なし。D1 IDはプレースホルダー、実際のトークンはSecrets参照。faviconには個人情報用メタデータチャンクなし。ただし全コミットの作成者・コミッターに通常のGmailアドレスがあり、Public化すると履歴から参照可能。その後、ユーザー承認により履歴のメール置換を実施（下記）。Public化・認証情報変更は行っていない。パターン検査と目視確認であり、あらゆる秘密情報の不存在を保証するものではない。
 - Cloudflare画面のログ設定（enabled・invocation_logs・persistをtrue）を `wrangler.scheduler.jsonc` に追加。Actionsでスケジューラーを再公開しても、起動ログ・consoleログの保存を維持する。ユーザー側は **Que-Fil scheduler deploy** をenabledにチェックして実行し、次回Cronのログを確認する。過去ログの復元や10時未起動の原因解消を意味する変更ではない。サイト側のログ設定・Cron時刻・起動条件は変更しない。
