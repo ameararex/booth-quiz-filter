@@ -5,6 +5,13 @@
   "compatibility_date": "2026-10-27",
   "workers_dev": false,
   "preview_urls": false,
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "invocation_logs": true,
+      "persist": true
+    }
+  },
   "triggers": { "crons": ["0 1,7,13,19 * * *"] },
   "vars": { "SCHEDULER_ENABLED": "false", "COLLECTION_MODE": "probe" }
 }

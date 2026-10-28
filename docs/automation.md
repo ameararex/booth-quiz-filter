@@ -5,6 +5,7 @@ Cloudflare Cron → GitHub workflow_dispatch → 収集・検証 → Workers Sta
 ## ファイルと初期状態
 
 - `wrangler.scheduler.jsonc` / `scheduler/index.ts` は起動専用の別Worker。画面用Workerと分離し、HTTP受付は404。D1やHTML解析は使わない。
+- 起動用WorkerのWorkers Logsは有効。起動ログとconsoleログをCloudflareダッシュボードに保存し、次回のCron結果をObservabilityで確認できる。無効だった期間のログは後から復元できない。
 - UTC 01:00 / 07:00 / 13:00 / 19:00（日本時間04:00 / 10:00 / 16:00 / 22:00）に実行する設定。ただし `SCHEDULER_ENABLED=false` で起動は無効。
 - `.github/workflows/collect.yml` はworkflow_dispatchのみ。GitHub scheduleには依存しない。標準Ubuntuランナーを使い、公開リポジトリの無料実行を想定する。リポジトリの公開状態は今回変更していない。
 - `COLLECTION_MODE=probe` が初期値。「クイズ」のキーワード検索の新着順3ページだけを検証し、公開JSONは差し替えない。
