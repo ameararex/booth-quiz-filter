@@ -107,3 +107,7 @@ npm run check  # テスト・型チェック・本番ビルド
 - [作業記録・未確認事項](docs/TODO.md)
 
 同梱フォントはM PLUS Rounded 1cです。フォントの配布元とライセンスは[フォントの説明](public/fonts/README.md)・[SIL Open Font License](public/fonts/LICENSE)を参照してください。
+
+配信に使うソフトウェアとフォントの著作権表示・ライセンス原文は、[第三者ライセンス](public/third-party-notices.txt)に収録しています。ビルド時に `scripts/generate-licenses.mjs` がインストール済みバージョンから再生成し、サイトのフッターから参照できる静的ファイルとして同梱します。配信する依存ライブラリを追加した際は、生成対象と同梱コードのライセンスを見直してください。Que-Fil独自のコードや商品情報・画像に第三者のOSSライセンスを適用するものではありません。
+
+問い合わせ窓口はサイトのフッターからGoogleフォームへ案内しています。フォームの説明文と設定確認は [docs/contact-form.md](docs/contact-form.md) を参照してください。

@@ -168,6 +168,10 @@ input[type="radio"], input[type="checkbox"] { accent-color: #0874d1; min-width: 
 .disclaimer { margin-top: 12px; color: #526475; font-size: 12px; line-height: 1.9; }
 .disclaimer summary { cursor: pointer; width: fit-content; padding: 8px 0; font-weight: 700; }
 .disclaimer p { max-width: 85ch; margin-top: 10px; }
+.disclaimer h3 { margin-top: 18px; font-size: 13px; }
+.footer-contact { display: inline-flex; align-items: center; min-height: 44px; padding-block: 8px; font-size: 12px; overflow-wrap: anywhere; }
+.privacy-destinations { max-width: 85ch; padding-left: 20px; }
+.privacy-destinations li { margin-top: 14px; overflow-wrap: anywhere; }
 .share-panel { max-width: 800px; }
 .share-consent { display: flex; gap: 8px; align-items: center; min-height: 44px; font-size: 13px; margin: 14px 0; }
 .share-import { margin-top: 24px; }

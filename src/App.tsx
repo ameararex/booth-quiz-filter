@@ -9,6 +9,7 @@ import { useHiddenList } from './hooks/useHiddenList.ts';
 import { ProductCard } from './components/ProductCard.tsx';
 import { ViewToggle } from './components/ViewToggle.tsx';
 import { SharePanel } from './components/SharePanel.tsx';
+import { LegalNotices } from './components/LegalNotices.tsx';
 import { loadSharedList, SHARE_ID_PATTERN } from './lib/sharing.ts';
 import { sortProducts } from './lib/presentation.ts';
 import type { SortOrder } from './lib/presentation.ts';
@@ -276,6 +277,7 @@ export function App() {
         <p>商品画像・商品名などの権利は、それぞれの権利者に帰属します。非表示設定は利用者個人の好みを整理するためのもので、商品やショップの品質を評価・断定するものではありません。</p>
         <p>本サービスは、予告なく内容の変更・提供の中断・終了を行うことがあります。</p>
       </details>
+      <LegalNotices />
     </footer>
     <div className="toast-region" role="status" aria-live="polite" aria-atomic="true">{toast && <div className="toast" key={toast.id}>{toast.message}{!hidden.saved && <span>保存できませんでした。JSONを書き出して保管してください。</span>}</div>}</div>
   </>;
